@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public enum PlayerState { Idle, Move, Run, Dodge, Attack }
@@ -5,58 +6,61 @@ public enum PlayerState { Idle, Move, Run, Dodge, Attack }
 [RequireComponent(typeof(Rigidbody))]
 public class ThirdPersonController : MonoBehaviour
 {
-    [Header("控制与物理")]
-    [SerializeField] private float moveSpeed = 6f;
-    [SerializeField] private Transform cameraTransform;
-    [SerializeField] private Animator animator;
+    [Header("子模块")]
+    [SerializeField] private PlayerLocomotion locomotion;
+    [SerializeField] private PlayerAnimController animCtrl;
+    [SerializeField] private PlayerCombat combat;
 
-    [Header("加减速手感参数")]
-    [SerializeField] private float accelSpeed = 2.5f;
-    [SerializeField] private float decelSpeed = 6.0f;
-    private float currentMovementValue = 0f;
-
-    [Header("自动奔跑")]
-    [SerializeField] private float autoRunDelay = 3f;
-    private float autoRunTimer = 0f;
-    private float _targetSpeed = 0f;
-
-    [Header("闪避参数")]
-    [SerializeField] private float dodgeDistance = 5f;
-    [SerializeField] private float dodgeDuration = 0.4f;
-    private float dodgeTimer = 0f;
-    private bool isBackDodge = false;
-
-    [Header("攻击参数")]
-    [SerializeField] private float attackDuration = 0.45f;
-    [SerializeField] private float attackDamage = 20f;
-    [SerializeField] private float attackRadius = 2.5f;
-    [SerializeField] private LayerMask enemyLayer;
-    private float attackTimer;
-    private float attackExitDelay = 0f; // 👑 收刀保护后摇
-    private int comboStep = 0;
+    [Header("地面检测")]
+    [SerializeField] private LayerMask groundLayer = ~0;
+    [SerializeField] private float groundCheckDistance = 0.2f;
+    private Collider characterCollider;
+    private bool isGrounded;
 
     private PlayerState currentState = PlayerState.Idle;
     private Rigidbody rb;
     private Vector3 moveInput;
-    private float lastTargetSpeed = 0f;
+    private float dodgeTimer;
 
+    // 当前帧的动画融合目标（只读，供 ApplyMovement 使用）
+    private float blendTarget;
+
+    // 公开访问器（向后兼容参考代码的外部调用）
+    public float CurrentHealth => combat != null ? combat.CurrentHealth : 0f;
+    public static event Action<float> OnPlayerDamaged;
+
+    public void TryTakeDamage(float damage)
+    {
+        if (combat != null)
+        {
+            combat.TakeDamage(damage);
+            OnPlayerDamaged?.Invoke(combat.CurrentHealth);
+        }
+    }
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        characterCollider = GetComponent<Collider>();
         rb.constraints = RigidbodyConstraints.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
-        if (cameraTransform == null && Camera.main != null)
-            cameraTransform = Camera.main.transform;
-    }
 
-    private void Start() => ChangeState(PlayerState.Idle);
+        if (locomotion == null) locomotion = GetComponent<PlayerLocomotion>();
+        if (animCtrl == null) animCtrl = GetComponent<PlayerAnimController>();
+        if (combat == null) combat = GetComponent<PlayerCombat>();
+
+        locomotion.Initialize(rb, Camera.main != null ? Camera.main.transform : null);
+        animCtrl.Initialize();
+        combat.Initialize();
+
+        // 订阅内部伤害事件 → 转发到本类静态事件
+        PlayerCombat.OnPlayerDamaged += (hp) => OnPlayerDamaged?.Invoke(hp);
+    }
 
     private void Update()
     {
-        Debug.Log($"==== 当前 State 是: {currentState} ===="); // 👑 加上这行
         ReadInput();
-      
+        CheckGrounded();
 
         switch (currentState)
         {
@@ -67,94 +71,156 @@ public class ThirdPersonController : MonoBehaviour
             case PlayerState.Attack: UpdateAttack(); break;
         }
 
-        UpdateAnimatorParams();
+        TickAnimatorBlend();
     }
 
-    private void ChangeState(PlayerState newState)
+    private void FixedUpdate()
     {
-        if (currentState == newState) return;
+        // Attack/Dodge：消费 OnAnimatorMove 缓存的根运动 delta，通过刚体管线同步。
+        if (currentState == PlayerState.Attack || currentState == PlayerState.Dodge)
+        {
+            var (deltaPos, deltaRot) = animCtrl.ConsumeRootMotionDelta();
+            if (deltaPos != Vector3.zero)
+                rb.MovePosition(rb.position + deltaPos);
+            if (deltaRot != Quaternion.identity)
+                rb.MoveRotation(rb.rotation * deltaRot);
+            return;
+        }
+
+        bool isRunning = currentState == PlayerState.Run;
+        locomotion.ApplyMovement(moveInput, isRunning, blendTarget);
+        locomotion.RotateToward(moveInput);
+    }
+
+    // ─── 输入 ────────────────────────────────────────
+    private void ReadInput()
+    {
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
+        moveInput = locomotion.GetCameraRelativeInput(h, v);
+    }
+
+    // ─── 状态机 ──────────────────────────────────────
+    private void ChangeState(PlayerState next)
+    {
+        if (currentState == next) return;
         OnExitState(currentState);
-        currentState = newState;
-        OnEnterState(newState);
+        currentState = next;
+        OnEnterState(next);
     }
 
     private void OnEnterState(PlayerState state)
     {
-        if (state == PlayerState.Dodge)
+        switch (state)
         {
-            dodgeTimer = dodgeDuration;
-            Vector3 dodgeDirection = transform.forward;
-            if (isBackDodge) dodgeDirection = -transform.forward;
-            else if (moveInput.sqrMagnitude > 0.01f) dodgeDirection = moveInput.normalized;
+            case PlayerState.Dodge:
+                dodgeTimer = 0.4f;
+                combat.SetInvulnerable(true);
+                Vector3 dir = GetDodgeDirection();
+                locomotion.StartDodge(dir);
+                animCtrl.TriggerDodge();
+                break;
 
-            rb.velocity = Vector3.zero;
-            rb.AddForce(dodgeDirection * dodgeDistance, ForceMode.Impulse);
-            animator.SetTrigger("Dodge");
-        }
-
-        if (state == PlayerState.Attack)
-        {
-            comboStep = 1;
-            attackTimer = attackDuration;
-            attackExitDelay = 0.15f; // 👑 防止快速连点时动画没跟上
-            animator.SetTrigger("Attack");
-            PerformAttackHitDetection();
+            case PlayerState.Attack:
+                combat.StartAttack();
+                animCtrl.SetSyncRootMotion(true);
+                animCtrl.TriggerAttack();
+                combat.PerformHitDetection(transform.position);
+                break;
         }
     }
 
     private void OnExitState(PlayerState state)
     {
-        if (state == PlayerState.Dodge)
+        switch (state)
         {
-            currentMovementValue = 0f;
-            lastTargetSpeed = 0f;
-        }
+            case PlayerState.Dodge:
+                combat.SetInvulnerable(false);
+                locomotion.ResetBlending();
+                break;
 
-        // 👑 新增：攻击结束时，把缓冲值绝对清零，确保下一刀能瞬发
-        if (state == PlayerState.Attack)
-        {
-            currentMovementValue = 0f;
-            lastTargetSpeed = 0f;
+            case PlayerState.Attack:
+                combat.ResetAllTimers();
+                animCtrl.SetSyncRootMotion(false);
+                locomotion.ResetBlending();
+                break;
         }
     }
 
-    // ===== 各状态 Update 逻辑 =====
+    private Vector3 GetDodgeDirection()
+    {
+        if (moveInput.sqrMagnitude > 0.01f) return moveInput;
+        return transform.forward;
+    }
+
+    // ─── 各状态 Update（匹配参考代码行为）──────────
+
     private void UpdateIdle()
     {
-        // 👑 核心修复：攻击判定必须放在整个方法的第一行，绝对防御任何缓冲锁的拦截！
-        if (Input.GetMouseButtonDown(0))
+        // 攻击始终最高优先级
+        if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
+
+        // Shift 点击 → 前冲
+        if (Input.GetKeyDown(KeyCode.LeftShift))
         {
-            Debug.Log(">>> 检测到鼠标左键按下！正在尝试进入 Attack 状态");
-            ChangeState(PlayerState.Attack);
+            ChangeState(PlayerState.Dodge);
             return;
         }
 
-        // 只有没按攻击键，才能被下面这个急停缓冲锁拦截
-        if (currentMovementValue > 0.02f) return;
+        // blend 仍在减速 → 阻塞移动类转换
+        if (!locomotion.IsBlendingComplete) return;
 
-        // 下面的正常待机逻辑
-        if (Input.GetKeyDown(KeyCode.LeftShift)) { isBackDodge = true; ChangeState(PlayerState.Dodge); return; }
+        // Shift 按住 + WASD → 奔跑
+        if (Input.GetKey(KeyCode.LeftShift) && moveInput.sqrMagnitude > 0.01f)
+        {
+            ChangeState(PlayerState.Run);
+            return;
+        }
+
+        // WASD → 行走
         if (moveInput.sqrMagnitude > 0.01f) ChangeState(PlayerState.Move);
     }
 
     private void UpdateMove()
     {
+        // WASD 松开 → Idle
         if (moveInput.sqrMagnitude < 0.01f) { ChangeState(PlayerState.Idle); return; }
-        if (Input.GetKeyDown(KeyCode.LeftShift)) { isBackDodge = false; ChangeState(PlayerState.Dodge); return; }
+
+        // 攻击
         if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
 
-        if (currentMovementValue > 0.02f) return;
-        if (Input.GetKey(KeyCode.LeftShift)) ChangeState(PlayerState.Run);
+        // Shift 点击 → 前冲
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            ChangeState(PlayerState.Dodge);
+            return;
+        }
+
+        // blend 加速未完成 → 阻塞 Run 切换（防闪烁）
+        if (!locomotion.IsBlendingComplete) return;
+
+        if (Input.GetKey(KeyCode.LeftShift)) { ChangeState(PlayerState.Run); return; }
     }
 
     private void UpdateRun()
     {
+        // WASD 松开 → Idle
         if (moveInput.sqrMagnitude < 0.01f) { ChangeState(PlayerState.Idle); return; }
-        if (Input.GetKeyDown(KeyCode.LeftShift)) { isBackDodge = false; ChangeState(PlayerState.Dodge); return; }
+
+        // 攻击
         if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
 
-        if (currentMovementValue > 0.02f) return;
-        if (!Input.GetKey(KeyCode.LeftShift)) ChangeState(PlayerState.Move);
+        // Shift 点击 → 前冲
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            ChangeState(PlayerState.Dodge);
+            return;
+        }
+
+        // blend 减速未完成 → 阻塞 Move 切换
+        if (!locomotion.IsBlendingComplete) return;
+
+        if (!Input.GetKey(KeyCode.LeftShift)) { ChangeState(PlayerState.Move); return; }
     }
 
     private void UpdateDodge()
@@ -164,131 +230,73 @@ public class ThirdPersonController : MonoBehaviour
         {
             if (moveInput.sqrMagnitude > 0.01f)
                 ChangeState(Input.GetKey(KeyCode.LeftShift) ? PlayerState.Run : PlayerState.Move);
-            else ChangeState(PlayerState.Idle);
+            else
+                ChangeState(PlayerState.Idle);
         }
     }
 
-    // 👑 修复后的攻击状态：删掉错误的哈希判断，加入后摇保护
     private void UpdateAttack()
     {
-        // 1. 连击逻辑
-        if (Input.GetMouseButtonDown(0) && attackTimer > 0f)
+        // 步骤 1：连击窗口（等价参考代码步骤 1）
+        if (Input.GetMouseButtonDown(0) && combat.CanCombo)
         {
-            attackTimer = attackDuration;
-            animator.ResetTrigger("NextAttack");
-            animator.SetTrigger("NextAttack");
-            PerformAttackHitDetection();
+            combat.TryCombo();
+            animCtrl.TriggerNextAttack();
+            combat.PerformHitDetection(transform.position);
             return;
         }
 
-        // 2. 挥刀倒计时
-        if (attackTimer > 0f)
+        // 步骤 2：挥刀倒计时（等价参考代码步骤 2）
+        if (combat.IsAttacking)
         {
-            attackTimer -= Time.deltaTime;
+            combat.DecrementTimer(Time.deltaTime);
             return;
         }
 
-        // 3. 👑 核心：挥刀结束立刻判断 WASD
+        // 步骤 3：挥刀结束立刻判断 WASD（等价参考代码步骤 3）
         if (moveInput.sqrMagnitude > 0.01f)
         {
             ChangeState(Input.GetKey(KeyCode.LeftShift) ? PlayerState.Run : PlayerState.Move);
             return;
         }
 
-        // 4. 👑 新增：强制退出保险！如果 0.3 秒后还没回到 Idle，就强行切出去！
-        attackExitDelay += Time.deltaTime;
-        if (attackExitDelay >= 0.3f)
+        // 步骤 4：强制退出保险（等价参考代码步骤 4）
+        if (combat.IncrementForceExitTimer(Time.deltaTime))
         {
-            attackExitDelay = 0f;
+            combat.ResetForceExitTimer();
             ChangeState(PlayerState.Idle);
             return;
         }
 
-        // 5. 如果我们还是靠动画状态自己退（如果你已经把动画修好了，这行能正常跑）
-        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        if (!stateInfo.IsName("Idle"))
+        // 步骤 5：动画已回到 Idle 才退出（等价参考代码 !stateInfo.IsName("Idle")）
+        // 注意：不能用 !IsInState("Attack")，因为连击后动画在 Attack2/Attack3，
+        //       此时 IsInState("Attack") 为 false 会错误截断连击。
+        if (animCtrl.IsInState("Idle"))
         {
-            return;
-        }
-        attackExitDelay = 0f;
-        ChangeState(PlayerState.Idle);
-    }
-    private void FixedUpdate()
-    {
-        if (currentState == PlayerState.Dodge)
-        {
-            rb.angularVelocity = Vector3.zero;
-            return;
-        }
-
-        if (_targetSpeed == 0f && currentMovementValue > 0.02f)
-        {
-            rb.velocity = new Vector3(0f, rb.velocity.y, 0f);
-            return;
-        }
-
-        float speed = currentState == PlayerState.Move ? moveSpeed : moveSpeed * 1.6f;
-        Vector3 velocity = rb.velocity;
-        velocity.x = moveInput.x * speed;
-        velocity.z = moveInput.z * speed;
-        rb.velocity = velocity;
-
-        if (moveInput.sqrMagnitude > 0.01f)
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, Quaternion.LookRotation(moveInput), 12f * Time.fixedDeltaTime));
-    }
-
-    private void UpdateAnimatorParams()
-    {
-        float targetSpeed = 0f;
-        if (currentState == PlayerState.Move) targetSpeed = 1.0f;
-        else if (currentState == PlayerState.Run) targetSpeed = 2.0f;
-        _targetSpeed = targetSpeed;
-
-        if (targetSpeed > 0f)
-        {
-            currentMovementValue = Mathf.MoveTowards(currentMovementValue, targetSpeed, accelSpeed * Time.deltaTime);
-            lastTargetSpeed = targetSpeed;
-        }
-        else
-        {
-            currentMovementValue = Mathf.MoveTowards(currentMovementValue, 0f, decelSpeed * Time.deltaTime);
-        }
-
-        animator.SetFloat("Movement", currentMovementValue);
-        animator.SetFloat("LastMoveSpeed", lastTargetSpeed);
-    }
-
-    private void ReadInput()
-    {
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
-        Vector3 inputDir = new Vector3(h, 0f, v).normalized;
-
-        if (cameraTransform != null)
-        {
-            Vector3 forward = cameraTransform.forward;
-            Vector3 right = cameraTransform.right;
-            forward.y = 0f; right.y = 0f;
-            forward.Normalize(); right.Normalize();
-            moveInput = (forward * inputDir.z + right * inputDir.x).normalized;
-        }
-        else
-        {
-            moveInput = inputDir;
+            combat.ResetForceExitTimer();
+            ChangeState(PlayerState.Idle);
         }
     }
 
-    private void PerformAttackHitDetection()
+    // ─── 动画融合 ─────────────────────────────────────
+    private void TickAnimatorBlend()
     {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, attackRadius, enemyLayer);
-        foreach (Collider col in colliders)
-        {
-            Enemy enemy = col.GetComponent<Enemy>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(attackDamage);
-                Debug.Log($"攻击命中敌人！造成 {attackDamage} 点伤害");
-            }
-        }
+        blendTarget = 0f;
+        if (currentState == PlayerState.Move) blendTarget = 1f;
+        else if (currentState == PlayerState.Run) blendTarget = 2f;
+
+        var result = locomotion.TickBlending(blendTarget, Time.deltaTime);
+        animCtrl.SetMovement(result.blend);
+        animCtrl.SetLastMoveSpeed(result.lastTarget);
+    }
+
+    // ─── 地面检测 ─────────────────────────────────────
+    private void CheckGrounded()
+    {
+        if (characterCollider == null) { isGrounded = true; return; }
+        Vector3 center = characterCollider.bounds.center;
+        float half = characterCollider.bounds.extents.y;
+        Vector3 origin = center - Vector3.up * (half - 0.1f);
+        isGrounded = Physics.Raycast(origin, Vector3.down, groundCheckDistance, groundLayer);
     }
 }

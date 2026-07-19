@@ -3,12 +3,28 @@
   "WorkspaceRootPath": "E:\\Unity\\My project\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|e:\\unity\\my project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\thirdpersoncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|e:\\unity\\my project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\playeranimationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\playeranimationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|E:\\Unity\\My project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\playerlocomotion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\playerlocomotion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|E:\\Unity\\My project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\playercombat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\playercombat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|E:\\Unity\\My project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\thirdpersoncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\thirdpersoncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|e:\\unity\\my project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|E:\\Unity\\My project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\ui\\healthbarui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\ui\\healthbarui.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Unity\\My project\\Assets\\ZZZ_Assets\\Shader\\\u4E8C\u6B21\u5143\\UnityGenshinToonShader-main\\Shaders\\URPGenshinToon.shader||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\ZZZ_Assets\\Shader\\\u4E8C\u6B21\u5143\\UnityGenshinToonShader-main\\Shaders\\URPGenshinToon.shader||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,7 +34,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,29 +42,77 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Enemy.cs",
-              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\Enemy.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\Enemy.cs",
-              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\Enemy.cs",
-              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\Enemy.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "PlayerAnimationController.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerAnimationController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerAnimationController.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerAnimationController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerAnimationController.cs",
+              "ViewState": "AgIAACkAAAAAAAAAAAAswAYAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-11T12:31:37.861Z",
+              "WhenOpened": "2026-07-19T14:27:32.157Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ThirdPersonController.cs",
+              "DocumentIndex": 5,
+              "Title": "URPGenshinToon.shader",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\ZZZ_Assets\\Shader\\\u4E8C\u6B21\u5143\\UnityGenshinToonShader-main\\Shaders\\URPGenshinToon.shader",
+              "RelativeDocumentMoniker": "Assets\\ZZZ_Assets\\Shader\\\u4E8C\u6B21\u5143\\UnityGenshinToonShader-main\\Shaders\\URPGenshinToon.shader",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\ZZZ_Assets\\Shader\\\u4E8C\u6B21\u5143\\UnityGenshinToonShader-main\\Shaders\\URPGenshinToon.shader",
+              "RelativeToolTip": "Assets\\ZZZ_Assets\\Shader\\\u4E8C\u6B21\u5143\\UnityGenshinToonShader-main\\Shaders\\URPGenshinToon.shader",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002777|",
+              "WhenOpened": "2026-07-19T17:19:22.977Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PlayerCombat.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerCombat.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerCombat.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerCombat.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerCombat.cs",
+              "ViewState": "AgIAAEYAAAAAAAAAAAA9wGQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-19T13:42:34.596Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
               "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
               "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
               "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
-              "ViewState": "AgIAAKUAAAAAAAAAAAAUwNYAAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAAwAoAAAA7AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-11T12:31:32.977Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-19T14:11:07.128Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PlayerLocomotion.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
+              "ViewState": "AgIAAFcAAAAAAAAAAAA9wHUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-19T13:42:34.596Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "HealthBarUI.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\UI\\HealthBarUI.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\UI\\HealthBarUI.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\UI\\HealthBarUI.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\UI\\HealthBarUI.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC0AAAABAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKmSURBVDhP7dFPSJNxHAbw5/vunQ3xbU4naqaSMxObhTkqA\u002B3PQUrwEISU9AfyX6dyEd0ko1NQblYQKdLB1ENKsDoEUSEWNrc0LaxMDwnmdJbOmZtu7/vtkBvvpZMdfW7fHx94HvgBG1lvCAC\u002BL3w39Hzr0T358gifvZPISMqAtdCK0sQCf3KyeSmCO0Y6DFpBG6owVywxXxPah01GY6zRV5ZTthIxAgAEggGboJA7xBo3iWG3qJA7Rhbdv2RNXQQCQDAUtPlX/XUA0D5sMobl0HPP0lSJ2ogAcGfIliAK4pbdibtcC8GFe4VJFpvT40wY8AxIavxwtCWBAQkAWj/aNQpiksHQqQ0BQE5LliNzc6ZUnFLSKjMcRFTX73lTuxTyd53Lr\u002Br8HfBX2j80wbfiO0VEPwD0MjgOQC0Yz0x609g2aftY94nuThEAvMuz8Aa8vS9Ovu5cK7ptbsuNJYUnREXUg4TCv/WkZ2YQoRBMOhC0IM4GSNIIUKIzDfY4h6FZaow\u002B/CNqZ2yKTY23S1PxzVK52gjq43\u002BEsNYMosH5S/7oSnNbbgMB49aCq\u002BOLq74G29At\u002BFYX94LZR8BXJugAKgZ4xKTPnsnSm1yPj/fcEAEgTUpHupR\u002BsKivqFI2wEHzVNc7\u002Ber04qqvKyyE3zMrgwAA5h1rnzIIcBzA\u002B8GYAPMYyzQRXXjl5WVHWJHLF1cWXE5P/90jGaV2ZiVBVuTr9489iK4\u002B0L7PwcBg/xlnY3H7nlQFWjeYLrw9\u002B\u002B5pxAgAUJVXM58amzLtmnFt9Qbmbo7OfVo5lHZ4\u002BmJBvT8CAaA6r2a\u002BemetHwBq8uvl83k1s1Xm2qDaCAAgh2QrWLCILFtkkIUgWkRNyAINWtRY3sRWXuYWANCN6X4qWj5KPupTm42sP38A\u002BPobLn6iw4AAAAAASUVORK5CYII=",
+              "WhenOpened": "2026-07-19T13:42:34.597Z"
             }
           ]
         }
