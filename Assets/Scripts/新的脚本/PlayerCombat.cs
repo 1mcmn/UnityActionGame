@@ -84,6 +84,7 @@ public class PlayerCombat : MonoBehaviour
             Enemy enemy = col.GetComponent<Enemy>();
             if (enemy != null)
             {
+                Debug.Log($"[Combat] 攻击命中 {enemy.name}，造成 {attackDamage} 点伤害");
                 enemy.TakeDamage(attackDamage);
             }
         }
