@@ -10,6 +10,13 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float attackRadius = 2.5f;
     [SerializeField] private LayerMask enemyLayer;
 
+    public LayerMask EnemyLayer => enemyLayer;
+
+    [Header("弹反")]
+    [SerializeField] private float _parryRadius  = 2f;
+    [SerializeField] private float _parryDamage  = 30f;    // 弹反僵直伤害
+    [SerializeField] private float _parryWindow  = 0.3f;   // 弹反窗口（秒）
+
     [Header("生命值")]
     [SerializeField] private float maxHealth = 100f;
     private float currentHealth;
@@ -79,6 +86,8 @@ public class PlayerCombat : MonoBehaviour
     public void PerformHitDetection(Vector3 origin)
     {
         Collider[] colliders = Physics.OverlapSphere(origin, attackRadius, enemyLayer);
+        Debug.Log($"[Combat] 攻击判定 origin={origin}, radius={attackRadius}, 命中数={colliders.Length}");
+
         foreach (Collider col in colliders)
         {
             Enemy enemy = col.GetComponent<Enemy>();
@@ -99,4 +108,29 @@ public class PlayerCombat : MonoBehaviour
     }
 
     public void SetInvulnerable(bool value) => isInvulnerable = value;
+
+    // ─── 弹反 ──────────────────────────────────────
+
+    /// <summary>
+    /// 尝试弹反周围的敌人。调用时机：玩家按下弹反键，且处于可弹反状态。
+    /// 返回 true 表示至少弹反到一个敌人。
+    /// </summary>
+    public bool TryParry(Vector3 origin)
+    {
+        Collider[] colliders = Physics.OverlapSphere(origin, _parryRadius, enemyLayer);
+        bool hitAny = false;
+
+        foreach (Collider col in colliders)
+        {
+            EnemyAI enemyAI = col.GetComponent<EnemyAI>();
+            if (enemyAI != null)
+            {
+                enemyAI.OnParried(origin);
+                hitAny = true;
+                Debug.Log($"[Combat] 弹反成功！{col.name}");
+            }
+        }
+
+        return hitAny;
+    }
 }

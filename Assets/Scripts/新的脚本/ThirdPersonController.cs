@@ -14,6 +14,11 @@ public class ThirdPersonController : MonoBehaviour
     [Header("地面检测")]
     [SerializeField] private LayerMask groundLayer = ~0;
     [SerializeField] private float groundCheckDistance = 0.2f;
+
+    [Header("攻击手感")]
+    [SerializeField] private float _attackHitDelay    = 0.15f;  // 攻击判定延迟（秒）
+    [SerializeField] private float _attackStopDist    = 1.2f;   // 攻击时停在敌人前方的距离
+    [SerializeField] private float _attackLungeSpeed  = 3f;     // 攻击时向敌人突进速度
     private Collider characterCollider;
     private bool isGrounded;
 
@@ -81,7 +86,13 @@ public class ThirdPersonController : MonoBehaviour
         {
             var (deltaPos, deltaRot) = animCtrl.ConsumeRootMotionDelta();
             if (deltaPos != Vector3.zero)
+            {
+                // 攻击时防止穿过敌人：检测前方敌人，限制前移距离
+                if (currentState == PlayerState.Attack)
+                    deltaPos = ClampForwardMotion(deltaPos);
+
                 rb.MovePosition(rb.position + deltaPos);
+            }
             if (deltaRot != Quaternion.identity)
                 rb.MoveRotation(rb.rotation * deltaRot);
             return;
@@ -125,7 +136,8 @@ public class ThirdPersonController : MonoBehaviour
                 combat.StartAttack();
                 animCtrl.SetSyncRootMotion(true);
                 animCtrl.TriggerAttack();
-                combat.PerformHitDetection(transform.position);
+                FaceNearestEnemy();
+                StartCoroutine(DelayedHitDetection(_attackHitDelay));
                 break;
         }
     }
@@ -242,7 +254,7 @@ public class ThirdPersonController : MonoBehaviour
         {
             combat.TryCombo();
             animCtrl.TriggerNextAttack();
-            combat.PerformHitDetection(transform.position);
+            StartCoroutine(DelayedHitDetection(_attackHitDelay));
             return;
         }
 
@@ -298,5 +310,81 @@ public class ThirdPersonController : MonoBehaviour
         float half = characterCollider.bounds.extents.y;
         Vector3 origin = center - Vector3.up * (half - 0.1f);
         isGrounded = Physics.Raycast(origin, Vector3.down, groundCheckDistance, groundLayer);
+    }
+
+    // ─── 攻击辅助 ─────────────────────────────────────
+
+    /// <summary>延迟 hit detection 到挥刀命中帧（约 0.15s 后）</summary>
+    private System.Collections.IEnumerator DelayedHitDetection(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        combat.PerformHitDetection(transform.position + transform.forward * 1.5f);
+    }
+
+    /// <summary>攻击时转向最近的敌人</summary>
+    private void FaceNearestEnemy()
+    {
+        Transform nearest = FindNearestEnemy();
+        if (nearest == null) return;
+
+        Vector3 dir = (nearest.position - transform.position).normalized;
+        dir.y = 0f;
+        if (dir != Vector3.zero)
+            rb.MoveRotation(Quaternion.LookRotation(dir));
+    }
+
+    /// <summary>
+    /// 限制 root motion 前移量，防止角色穿过敌人。
+    /// 如果前方近距离有敌人，缩短位移使角色停在敌人面前。
+    /// </summary>
+    private Vector3 ClampForwardMotion(Vector3 delta)
+    {
+        // 只有向前移动时才检查
+        Vector3 forward = delta.normalized;
+        float forwardDot = Vector3.Dot(forward, transform.forward);
+        if (forwardDot <= 0f) return delta; // 不是向前移动，不拦截
+
+        Transform nearest = FindNearestEnemy();
+        if (nearest == null) return delta;
+
+        Vector3 toEnemy = nearest.position - rb.position;
+        toEnemy.y = 0f;
+        float dist = toEnemy.magnitude;
+
+        // 已经足够近了，阻止继续前移
+        if (dist <= _attackStopDist)
+            return Vector3.zero;
+
+        // 限制前移量，不要越过敌人
+        float maxForward = dist - _attackStopDist;
+        float deltaMag = delta.magnitude;
+        if (deltaMag > maxForward)
+            return delta.normalized * maxForward;
+
+        return delta;
+    }
+
+    /// <summary>找到最近的敌人（通过 combat 的 enemyLayer）</summary>
+    private Transform FindNearestEnemy()
+    {
+        if (combat == null) return null;
+
+        LayerMask mask = combat.EnemyLayer;
+        Collider[] cols = Physics.OverlapSphere(transform.position, 4f, mask);
+        Transform best = null;
+        float bestDist = float.MaxValue;
+
+        foreach (Collider c in cols)
+        {
+            Vector3 toTarget = c.transform.position - transform.position;
+            toTarget.y = 0f;
+            float d = toTarget.sqrMagnitude;
+            if (d < bestDist)
+            {
+                bestDist = d;
+                best = c.transform;
+            }
+        }
+        return best;
     }
 }
