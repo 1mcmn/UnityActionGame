@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abc873dae8f12074b8aac15fd5af125c, type: 3}
+  m_Name: PlayerSounds
+  m_EditorClassIdentifier: 
+  sounds:
+  - soundID: atk01_swing
+    clip: {fileID: 8300000, guid: 8dd590bb7a3f66e46a3b2c08023b2af1, type: 3}
+  - soundID: atk02_swing
+    clip: {fileID: 8300000, guid: f6b7d84faf3f2e24590394e6228d3417, type: 3}
+  - soundID: atk03_swing
+    clip: {fileID: 8300000, guid: 003aa5abacf93a94089bd8c2ef28fff1, type: 3}
+  - soundID: atk04_swing
+    clip: {fileID: 8300000, guid: 1b64cc9091420f94e8595fbf90572fb1, type: 3}
+  - soundID: atk05_swing
+    clip: {fileID: 8300000, guid: 6aa89f48868b7ce49b0a21e880fcb68a, type: 3}
+  - soundID: atk01_hit
+    clip: {fileID: 8300000, guid: 4b9c1d6918c16cf4ab07098aa01ef840, type: 3}
+  - soundID: atk02_hit
+    clip: {fileID: 8300000, guid: be7658528d067aa4ab612584504b3060, type: 3}
+  - soundID: sword_hit_03
+    clip: {fileID: 8300000, guid: 723f33a93b83587428bff95cf9299112, type: 3}
+  - soundID: atk03_hit
+    clip: {fileID: 8300000, guid: c914542f9b4cf5e4088485f33429109f, type: 3}
+  - soundID: atk04_hit
+    clip: {fileID: 8300000, guid: 89969e178cd0c5d4a9e5b6539690e301, type: 3}
+  - soundID: atk05_hit
+    clip: {fileID: 8300000, guid: 6b759dcfb1dd11447991d2534fc840c5, type: 3}
+  - soundID: atk06_hit
+    clip: {fileID: 8300000, guid: 3b0c652427fd1564aa86ffbc9ddcca67, type: 3}
+  - soundID: voice_01
+    clip: {fileID: 8300000, guid: 03ce7510829862a48bff2d43ea4c2a8c, type: 3}
+  - soundID: voice_02
+    clip: {fileID: 8300000, guid: 96d6cac7aa3300b449f4389abfaa9110, type: 3}
+  - soundID: voice_03
+    clip: {fileID: 8300000, guid: 58a8e17b02c497d49ab52daf7d303508, type: 3}
+  - soundID: voice_04
+    clip: {fileID: 8300000, guid: 8a24dae1c820e8745906d92c5789b14b, type: 3}
+  - soundID: voice_05
+    clip: {fileID: 8300000, guid: 67962eeb9da990d4880a13891fe5c269, type: 3}
+  - soundID: voice_06
+    clip: {fileID: 8300000, guid: 4e106c77aaf89954ea2dece7534cbf1a, type: 3}
+  - soundID: voice_07
+    clip: {fileID: 8300000, guid: 9d2cba0049a938344b1ecf7ba5d1b748, type: 3}
+  - soundID: voice_08
+    clip: {fileID: 8300000, guid: 1ac08f3f3e9dafd46b2a5143d85cd9bc, type: 3}
+  - soundID: voice_09
+    clip: {fileID: 8300000, guid: 28b74d49d31322845a7d9a6711646a93, type: 3}
+  - soundID: voice_10
+    clip: {fileID: 8300000, guid: e53c9bdd76fe4544cb78a5b9a781aa20, type: 3}
+  - soundID: voice_11
+    clip: {fileID: 8300000, guid: 2d3571fbcdfd4ca4d8cf6ce5eb402353, type: 3}
+  - soundID: voice_12
+    clip: {fileID: 8300000, guid: a76ad41449f334c458b562271a3893f3, type: 3}
+  - soundID: voice_13
+    clip: {fileID: 8300000, guid: e0eff27583c22d64295395ea61714d2d, type: 3}
+  - soundID: voice_14
+    clip: {fileID: 8300000, guid: ae6588949fe94dc4a900cd8eb82d650b, type: 3}
+  - soundID: 'sword_sheath_01 '
+    clip: {fileID: 8300000, guid: e6e7f097429cc1b4182fbbc1291182b4, type: 3}
+  - soundID: sword_scabbard_01
+    clip: {fileID: 8300000, guid: 2eb0e25f8b7e9ec40a17a8a8d9f8a069, type: 3}
+  - soundID: foot_step_01
+    clip: {fileID: 8300000, guid: a7d39bb78dd35ed438aa29d107294902, type: 3}
+  - soundID: foot_step_02
+    clip: {fileID: 8300000, guid: 2e3cdcff2932f5845bbf2354c0b92df9, type: 3}
+  - soundID: foot_step_03
+    clip: {fileID: 8300000, guid: 0db33cd015aaf614da7a67d8ca772eac, type: 3}
+  - soundID: foot_step_04
+    clip: {fileID: 8300000, guid: 6d157c9495dba3a44a2e8ebc74f3e5fe, type: 3}
+  - soundID: foot_step_05
+    clip: {fileID: 8300000, guid: 65a01bf2bf0133249bf8d76bfc1785d3, type: 3}
+  - soundID: foot_step_06
+    clip: {fileID: 8300000, guid: a11786c3647ce5448acffeebd20cecf2, type: 3}
+  - soundID: foot_step_07
+    clip: {fileID: 8300000, guid: 06154e23c13a3df4bb3752b39abfc7ac, type: 3}
+  - soundID: foot_step_08
+    clip: {fileID: 8300000, guid: 4233c39f8b03fe64e9f5fe2a84450abb, type: 3}
+  - soundID: foot_back_01
+    clip: {fileID: 8300000, guid: 1f2148c7b6d65ef489de620385639f7a, type: 3}
+  - soundID: foot_back_02
+    clip: {fileID: 8300000, guid: 8986bc9f36fbdbb47b601da0eaa7dc34, type: 3}

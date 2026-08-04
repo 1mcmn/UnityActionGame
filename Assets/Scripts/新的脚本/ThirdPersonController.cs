@@ -43,6 +43,13 @@ public class ThirdPersonController : MonoBehaviour
         }
     }
 
+    /// <summary>刷新摄像机引用（开始界面进入游戏后调用）</summary>
+    public void RefreshCameraReference()
+    {
+        if (locomotion != null && Camera.main != null)
+            locomotion.Initialize(rb, Camera.main.transform);
+    }
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -314,11 +321,14 @@ public class ThirdPersonController : MonoBehaviour
 
     // ─── 攻击辅助 ─────────────────────────────────────
 
-    /// <summary>延迟 hit detection 到挥刀命中帧（约 0.15s 后）</summary>
+    /// <summary>延迟 hit detection（仅碰撞检测+伤害，音效和顿帧由 Animation Event 驱动）</summary>
     private System.Collections.IEnumerator DelayedHitDetection(float delay)
     {
         yield return new WaitForSeconds(delay);
-        combat.PerformHitDetection(transform.position + transform.forward * 1.5f);
+        combat.PerformHitDetection();
+        // 以下两行配合 Animation Event 使用时可删：
+        // combat.PlayHitSfx();
+        // combat.TriggerHitStop();
     }
 
     /// <summary>攻击时转向最近的敌人</summary>

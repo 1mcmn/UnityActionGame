@@ -873,36 +873,29 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
       events:
-      - time: 0.058045797
-        functionName: EnablePreInput
+      - time: 0.038477134
+        functionName: PlaySfx
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.081638426
-        functionName: PlayVFX
-        data: AnBi_01
-        objectReferenceParameter: {instanceID: 0}
-        floatParameter: 0
-        intParameter: 0
-        messageOptions: 0
-      - time: 0.09358679
-        functionName: ATK
+      - time: 0.07348109
+        functionName: TriggerHitStop
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.16223304
-        functionName: CancelAttackColdTime
+      - time: 0.08933789
+        functionName: PerformHitDetection
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.23956105
-        functionName: DisableLinkCombo
+      - time: 0.11280411
+        functionName: PlayHitSfx
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
