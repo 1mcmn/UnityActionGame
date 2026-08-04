@@ -1,7 +1,20 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "E:\\Unity\\My project\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:2:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|e:\\unity\\my project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemystatusbar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:2:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemystatusbar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|E:\\Unity\\My project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:1:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|e:\\unity\\my project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemystatusbar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:1:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemystatusbar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,11 +22,49 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "EnemyStatusBar.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
+              "ViewState": "AgIAAG4AAAAAAAAAAAA8wJYAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T13:30:31.404Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "EnemyStatusBar.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T16:32:18.52Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Enemy.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\Enemy.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\Enemy.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\Enemy.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\Enemy.cs",
+              "ViewState": "AgIAAEYAAAAAAAAAAAAAwE8AAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-07-30T15:46:01.109Z"
             }
           ]
         }

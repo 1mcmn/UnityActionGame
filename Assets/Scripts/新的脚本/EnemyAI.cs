@@ -220,6 +220,8 @@ public class EnemyAI : MonoBehaviour
                 break;
 
             case EnemyState.RunStart:
+                FacePlayer();
+                MoveTowardPlayer(_runSpeed);
                 if (_stateTimer <= 0f) ChangeState(EnemyState.Run);
                 break;
 
@@ -422,6 +424,7 @@ public class EnemyAI : MonoBehaviour
             case EnemyState.Idle:
                 _targetAnimSpeed = 0f;
                 EnsureKinematicOff();
+                if (_rigidbody != null) _rigidbody.velocity = Vector3.zero;
                 // 不 CrossFade("Idle")，用 Speed=0 让 Blend Tree 自动回 Idle
                 break;
 
@@ -448,6 +451,7 @@ public class EnemyAI : MonoBehaviour
             case EnemyState.RunEnd:
                 _targetAnimSpeed = 0f;
                 EnsureKinematicOff();
+                if (_rigidbody != null) _rigidbody.velocity = Vector3.zero;
                 CrossFade("Goblin_Ani_Run_End", 0.1f);
                 _stateTimer = ClipLength("Goblin_Ani_Run_End");
                 break;
@@ -669,11 +673,13 @@ public class EnemyAI : MonoBehaviour
         if (_player == null) return;
         Vector3 dir = (_player.position - transform.position).normalized;
         dir.y = 0f;
-        if (dir != Vector3.zero)
-        {
-            Quaternion targetRot = Quaternion.LookRotation(dir);
+        if (dir == Vector3.zero) return;
+
+        Quaternion targetRot = Quaternion.LookRotation(dir);
+        if (_rigidbody != null && !_rigidbody.isKinematic)
+            _rigidbody.MoveRotation(Quaternion.Slerp(_rigidbody.rotation, targetRot, _rotationSpeed * Time.deltaTime));
+        else
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, _rotationSpeed * Time.deltaTime);
-        }
     }
 
     private void MoveTowardPlayer(float speed)
