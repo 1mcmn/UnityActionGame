@@ -4,24 +4,34 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerCombat : MonoBehaviour
 {
-    [Header("攻击参数")]
+    [Header("攻击")]
+    [Tooltip("每段攻击的锁定时间（秒）")]
     [SerializeField] private float attackDuration = 0.45f;
-    [SerializeField] private float[] _comboDamages = { 15f, 18f, 22f, 28f, 35f };  // 第1~5段伤害
+    [Tooltip("第1~N段连击的伤害值")]
+    [SerializeField] private float[] _comboDamages = { 15f, 18f, 22f, 28f, 35f };
+    [Tooltip("攻击球形判定半径")]
     [SerializeField] private float attackRadius = 2.5f;
+    [Tooltip("敌人所在的 Layer")]
     [SerializeField] private LayerMask enemyLayer;
 
     public LayerMask EnemyLayer => enemyLayer;
 
     [Header("弹反")]
+    [Tooltip("弹反球形检测半径")]
     [SerializeField] private float _parryRadius  = 2f;
-    [SerializeField] private float _parryDamage  = 30f;    // 弹反僵直伤害
-    [SerializeField] private float _parryWindow  = 0.3f;   // 弹反窗口（秒）
+    [Tooltip("弹反造成的僵直伤害")]
+    [SerializeField] private float _parryDamage  = 30f;
+    [Tooltip("弹反有效窗口（秒）")]
+    [SerializeField] private float _parryWindow  = 0.3f;
 
-    [Header("顿帧（Hit-stop）")]
-    [SerializeField] private float _hitStopDuration = 0.05f;  // 顿帧持续时长（现实秒）
-    [SerializeField] private float _hitStopScale    = 0.1f;   // 顿帧时间缩放（0=完全暂停）
+    [Header("顿帧")]
+    [Tooltip("命中时画面停顿的时长（现实秒）")]
+    [SerializeField] private float _hitStopDuration = 0.05f;
+    [Tooltip("顿帧期间的时间缩放（0.1=10%速度）")]
+    [SerializeField] private float _hitStopScale    = 0.1f;
 
     [Header("生命值")]
+    [Tooltip("玩家最大生命值")]
     [SerializeField] private float maxHealth = 100f;
     private float currentHealth;
     private bool isInvulnerable;
@@ -31,14 +41,16 @@ public class PlayerCombat : MonoBehaviour
 
     private float attackTimer;
     private float forceExitTimer;
-    private int   _comboStep;  // 当前是第几段连击（0=普攻1, 1=普攻2, ...）
+    private int   _comboStep;          // 当前是第几段连击（0=普攻1, 1=普攻2, ...）
+    private bool  _comboWindowOpen;    // 攻击全程（含收刀）允许连击输入
 
     // 命中追踪（供 Animation Event 链使用：PerformHitDetection → PlayHitSfx / TriggerHitStop）
     private bool    _hasHitThisSwing;
     private Vector3 _lastHitPoint;
 
     public bool IsAttacking => attackTimer > 0f;
-    public bool CanCombo => attackTimer > 0f;
+    /// <summary>连击窗口：攻击状态期间始终可接下一段（含收刀动作）</summary>
+    public bool CanCombo => true;
 
     public void Initialize()
     {
