@@ -3,16 +3,28 @@
   "WorkspaceRootPath": "E:\\Unity\\My project\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|e:\\unity\\my project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\playerlocomotion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\playerlocomotion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|e:\\unity\\my project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemystatusbar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|E:\\Unity\\My project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemystatusbar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemystatusbar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|E:\\Unity\\My project\\assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\\u65B0\u7684\u811A\u672C\\enemy.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32C3BDE6-E125-3128-82C1-25D0441455A3}|Assembly-CSharp.csproj|solutionrelative:Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:1:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Unity\\My project\\Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:1:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:2:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Unity\\My project\\Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:2:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,11 +34,62 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "PlayerLocomotion.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-03T08:33:55.066Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Lit.shader",
+              "DocumentMoniker": "E:\\Unity\\My project\\Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader",
+              "RelativeDocumentMoniker": "Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader",
+              "ToolTip": "E:\\Unity\\My project\\Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader",
+              "RelativeToolTip": "Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002777|",
+              "WhenOpened": "2026-08-07T14:47:01.018Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Lit.shader",
+              "DocumentMoniker": "E:\\Unity\\My project\\Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader",
+              "RelativeDocumentMoniker": "Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader",
+              "ToolTip": "E:\\Unity\\My project\\Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader",
+              "RelativeToolTip": "Library\\PackageCache\\com.unity.render-pipelines.universal@14.2.0-t1\\Shaders\\Lit.shader",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002777|",
+              "WhenOpened": "2026-08-07T15:00:06.197Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ThirdPersonController.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\ThirdPersonController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-04T13:22:04.792Z"
             },
             {
               "$type": "Document",
@@ -38,21 +101,7 @@
               "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\EnemyStatusBar.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-30T16:32:18.52Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "PlayerLocomotion.cs",
-              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
-              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
-              "RelativeToolTip": "Assets\\Scripts\\\u65B0\u7684\u811A\u672C\\PlayerLocomotion.cs",
-              "ViewState": "AgIAACUAAAAAAAAAAAAkwA8AAAA4AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-03T08:33:55.066Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-07-30T16:32:18.52Z"
             },
             {
               "$type": "Document",

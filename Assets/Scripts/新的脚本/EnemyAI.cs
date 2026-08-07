@@ -147,6 +147,9 @@ public class EnemyAI : MonoBehaviour
             case EnemyState.StunEnd:
             case EnemyState.StunHit:
             case EnemyState.Death:
+            case EnemyState.Walk:
+            case EnemyState.RunStart:
+            case EnemyState.Run:
                 isAnimDriven = true;
                 break;
             default:
@@ -156,8 +159,13 @@ public class EnemyAI : MonoBehaviour
 
         if (!isAnimDriven) return;
 
-        // 把 Animator 算出的 root bone 位移同步到 Rigidbody（带动 Collider）
-        _rigidbody.MovePosition(_rigidbody.position + _animator.deltaPosition);
+        Vector3 delta = _animator.deltaPosition;
+
+        // 地面状态：去掉 Y 轴位移（Death 除外，死亡倒下需要垂直运动）
+        if (_state != EnemyState.Death)
+            delta.y = 0f;
+
+        _rigidbody.MovePosition(_rigidbody.position + delta);
 
         // 同时同步旋转
         Quaternion deltaRot = _animator.deltaRotation;
@@ -210,7 +218,6 @@ public class EnemyAI : MonoBehaviour
             case EnemyState.Walk:
                 if (_player == null) { ChangeState(EnemyState.Idle); break; }
                 FacePlayer();
-                MoveTowardPlayer(_walkSpeed);
                 if (dist <= _attackRadius && _attackCooldownTimer <= 0f)
                     ChangeState(EnemyState.Attack);
                 else if (dist < _closeRadius)
@@ -221,14 +228,12 @@ public class EnemyAI : MonoBehaviour
 
             case EnemyState.RunStart:
                 FacePlayer();
-                MoveTowardPlayer(_runSpeed);
                 if (_stateTimer <= 0f) ChangeState(EnemyState.Run);
                 break;
 
             case EnemyState.Run:
                 if (_player == null) { ChangeState(EnemyState.Idle); break; }
                 FacePlayer();
-                MoveTowardPlayer(_runSpeed);
                 if (dist <= _attackRadius)
                     ChangeState(EnemyState.RunEnd);
                 break;
@@ -417,6 +422,8 @@ public class EnemyAI : MonoBehaviour
         switch (st)
         {
             case EnemyState.Spawn:
+                if (_rigidbody != null)
+                    _rigidbody.velocity = Vector3.zero;
                 CrossFade("Goblin_Ani_Born", 0.1f);
                 _stateTimer = ClipLength("Goblin_Ani_Born");
                 break;
@@ -431,12 +438,13 @@ public class EnemyAI : MonoBehaviour
             case EnemyState.Walk:
                 _targetAnimSpeed = 0.5f;
                 EnsureKinematicOff();
-                // Walk 用 blend tree 或直接 CrossFade "Walk"
+                if (_rigidbody != null) _rigidbody.velocity = Vector3.zero;
                 break;
 
             case EnemyState.RunStart:
                 _targetAnimSpeed = 1f;
                 EnsureKinematicOff();
+                if (_rigidbody != null) _rigidbody.velocity = Vector3.zero;
                 CrossFade("Goblin_Ani_Run_Start", 0.1f);
                 _stateTimer = ClipLength("Goblin_Ani_Run_Start");
                 break;
@@ -444,7 +452,7 @@ public class EnemyAI : MonoBehaviour
             case EnemyState.Run:
                 _targetAnimSpeed = 1f;
                 EnsureKinematicOff();
-                // 从 RunStart 的过渡动画切回 blend tree，让 blend tree 在 Speed=1 播 Run 循环
+                if (_rigidbody != null) _rigidbody.velocity = Vector3.zero;
                 CrossFade(_locomotionHash, 0.05f);
                 break;
 

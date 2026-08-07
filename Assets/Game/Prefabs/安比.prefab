@@ -101,9 +101,6 @@ PrefabInstance:
       addedObject: {fileID: 4389422545846054156}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b91062028459370489c68313f412b9db, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3711825498972834238}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b91062028459370489c68313f412b9db, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 6981558941454888195}
   m_SourcePrefab: {fileID: 100100000, guid: b91062028459370489c68313f412b9db, type: 3}
 --- !u!1 &6584095043606337137 stripped
@@ -130,6 +127,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   groundCheckDistance: 0.2
+  _attackHitDelay: 0.15
+  _attackStopDist: 1.2
+  _attackLungeSpeed: 3
+  _parryDuration: 0.4
 --- !u!114 &6576964277002169556
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -143,11 +144,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackDuration: 0.45
-  attackDamage: 20
+  _comboDamages:
+  - 15
+  - 18
+  - 22
+  - 28
+  - 35
   attackRadius: 2.5
   enemyLayer:
     serializedVersion: 2
     m_Bits: 0
+  _parryRadius: 2
+  _parryDamage: 30
+  _parryWindow: 0.3
+  _hitStopDuration: 0.05
+  _hitStopScale: 0.1
   maxHealth: 100
 --- !u!114 &2900529425998309533
 MonoBehaviour:
@@ -215,19 +226,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.87910724, y: 1.4963213, z: 0.5172499}
   m_Center: {x: 0.014491692, y: 0.8155107, z: 0.02612093}
---- !u!114 &3711825498972834238
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6584095043606337137}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bf53dc0330d4b954c92d3330bb813a5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  animator: {fileID: 0}
 --- !u!82 &6981558941454888195
 AudioSource:
   m_ObjectHideFlags: 0

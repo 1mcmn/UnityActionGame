@@ -1,0 +1,736 @@
+fileFormatVersion: 2
+guid: CyhK5n6qBn38XFs6srWiK0PNIxrxy32ztaFWei/6Rf0gfK14dUA2H+M=
+ModelImporter:
+  serializedVersion: 22361
+  internalIDToNameTable: []
+  externalObjects: {}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 3
+    aCLCompressionLevel: 3
+    aCLCurvePrecision: 0.01
+    aCLFastSampleMode: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+    tuanjieGIEnable: 0
+    tuanjieGIGenSDFFactor: 1
+    tuanjieGIGenSDFBias: 0.25
+    tuanjieGIDoubleSidedMode: 0
+    tuanjieGIGenFacetNums: 12
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    totalVerticesCount: 110178
+    totalTrianglesCount: 194976
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  virtualGeometry:
+    virtualGeometry: 0
+    hasBoneWeight: 0
+    useTransparent: 0
+    setVGForeachMesh: 0
+    isFirstUse: 1
+    virtualGeometrySettings:
+      generateGeometryBuffer: 0
+      surfaceCompensation: 0
+      allMeshUse: 1
+      ignoreSimpleMesh: 0
+      transformScaleState: 0
+      isPossibleOverflow: 0
+    virtualGeometryPlatformSettings:
+    - serializedVersion: 0
+      overridden: 0
+      ignorePlatformSupport: 0
+      buildTarget: DefaultVirtualGeometryPlatform
+      positionPrecision: -2147483648
+      normalPrecision: -2147483648
+      tangentPrecision: -2147483648
+      detailedTriangleCount: 0
+      detailedVertexCount: 0
+      rootPageSize: 0
+      streamablePageSize: 0
+      reserveTrianglePercent: 100
+      reserveDetailLevel: 0
+    - serializedVersion: 0
+      overridden: 0
+      ignorePlatformSupport: 0
+      buildTarget: Standalone
+      positionPrecision: -2147483648
+      normalPrecision: -2147483648
+      tangentPrecision: -2147483648
+      detailedTriangleCount: 0
+      detailedVertexCount: 0
+      rootPageSize: 0
+      streamablePageSize: 0
+      reserveTrianglePercent: 100
+      reserveDetailLevel: 0
+    - serializedVersion: 0
+      overridden: 0
+      ignorePlatformSupport: 0
+      buildTarget: iPhone
+      positionPrecision: -2147483648
+      normalPrecision: -2147483648
+      tangentPrecision: -2147483648
+      detailedTriangleCount: 0
+      detailedVertexCount: 0
+      rootPageSize: 0
+      streamablePageSize: 0
+      reserveTrianglePercent: 100
+      reserveDetailLevel: 0
+    - serializedVersion: 0
+      overridden: 0
+      ignorePlatformSupport: 0
+      buildTarget: Android
+      positionPrecision: -2147483648
+      normalPrecision: -2147483648
+      tangentPrecision: -2147483648
+      detailedTriangleCount: 0
+      detailedVertexCount: 0
+      rootPageSize: 0
+      streamablePageSize: 0
+      reserveTrianglePercent: 100
+      reserveDetailLevel: 0
+    selectedVGMeshes:
+    - index: 0
+      meshName: face
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 1
+      meshName: eye
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 2
+      meshName: body
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 3
+      meshName: flower
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 4
+      meshName: hairpart1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 5
+      meshName: hairpart2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 6
+      meshName: holo
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 7
+      meshName: hudiejie2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 8
+      meshName: sweep9
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 9
+      meshName: shoutao
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 10
+      meshName: pTorus1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 11
+      meshName: pTorus7
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 12
+      meshName: pTorus8
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 13
+      meshName: polySurface6
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 14
+      meshName: pCylinder3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 15
+      meshName: diaozhui2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 16
+      meshName: diaozhui3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 17
+      meshName: polySurface9
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 18
+      meshName: 92_Body2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 19
+      meshName: polySurface10
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 20
+      meshName: polySurface11
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 21
+      meshName: polySurface12
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 22
+      meshName: polySurface13
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 23
+      meshName: polySurface14
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 24
+      meshName: polySurface15
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 25
+      meshName: sweep8
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 26
+      meshName: 92_Body3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 27
+      meshName: sweep10
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 28
+      meshName: pTorus14
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 29
+      meshName: pTorus13
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 30
+      meshName: diaozhui
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 31
+      meshName: skirtpart1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 32
+      meshName: diaozhui1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 33
+      meshName: skirtpart2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 34
+      meshName: pants
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 35
+      meshName: shoesband
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 36
+      meshName: shoes1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 37
+      meshName: wazi
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 38
+      meshName: shoes
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 39
+      meshName: hudiejie1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 40
+      meshName: shoesband
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 41
+      meshName: shoes1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 42
+      meshName: wazi
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 43
+      meshName: shoes
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 44
+      meshName: hudiejie1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 45
+      meshName: clothes
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 46
+      meshName: pijian
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 47
+      meshName: pCube5
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 48
+      meshName: pCube6
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 49
+      meshName: pCube7
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 50
+      meshName: yaodai1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 51
+      meshName: yaodai2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 52
+      meshName: yaodai3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 53
+      meshName: pTorus12
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 54
+      meshName: pTorus11
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 55
+      meshName: pTorus9
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 56
+      meshName: sweep5
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 57
+      meshName: pCylinder1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 58
+      meshName: hudiejie2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 59
+      meshName: sweep9
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 60
+      meshName: shoutao
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 61
+      meshName: pTorus1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 62
+      meshName: pTorus7
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 63
+      meshName: pTorus8
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 64
+      meshName: polySurface6
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 65
+      meshName: pCylinder3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 66
+      meshName: diaozhui2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 67
+      meshName: diaozhui3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    supportVGMeshes:
+    - index: 0
+      meshName: face
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 1
+      meshName: eye
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 2
+      meshName: body
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 3
+      meshName: flower
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 4
+      meshName: hairpart1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 5
+      meshName: hairpart2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 6
+      meshName: holo
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 7
+      meshName: hudiejie2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 8
+      meshName: sweep9
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 9
+      meshName: shoutao
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 10
+      meshName: pTorus1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 11
+      meshName: pTorus7
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 12
+      meshName: pTorus8
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 13
+      meshName: polySurface6
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 14
+      meshName: pCylinder3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 15
+      meshName: diaozhui2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 16
+      meshName: diaozhui3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 17
+      meshName: polySurface9
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 18
+      meshName: 92_Body2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 19
+      meshName: polySurface10
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 20
+      meshName: polySurface11
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 21
+      meshName: polySurface12
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 22
+      meshName: polySurface13
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 23
+      meshName: polySurface14
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 24
+      meshName: polySurface15
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 25
+      meshName: sweep8
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 26
+      meshName: 92_Body3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 27
+      meshName: sweep10
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 28
+      meshName: pTorus14
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 29
+      meshName: pTorus13
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 30
+      meshName: diaozhui
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 31
+      meshName: skirtpart1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 32
+      meshName: diaozhui1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 33
+      meshName: skirtpart2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 34
+      meshName: pants
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 35
+      meshName: shoesband
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 36
+      meshName: shoes1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 37
+      meshName: wazi
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 38
+      meshName: shoes
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 39
+      meshName: hudiejie1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 40
+      meshName: shoesband
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 41
+      meshName: shoes1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 42
+      meshName: wazi
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 43
+      meshName: shoes
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 44
+      meshName: hudiejie1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 45
+      meshName: clothes
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 46
+      meshName: pijian
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 47
+      meshName: pCube5
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 48
+      meshName: pCube6
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 49
+      meshName: pCube7
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 50
+      meshName: yaodai1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 51
+      meshName: yaodai2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 52
+      meshName: yaodai3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 53
+      meshName: pTorus12
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 54
+      meshName: pTorus11
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 55
+      meshName: pTorus9
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 56
+      meshName: sweep5
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 57
+      meshName: pCylinder1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 58
+      meshName: hudiejie2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 59
+      meshName: sweep9
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 60
+      meshName: shoutao
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 61
+      meshName: pTorus1
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 62
+      meshName: pTorus7
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 63
+      meshName: pTorus8
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 64
+      meshName: polySurface6
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 65
+      meshName: pCylinder3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 66
+      meshName: diaozhui2
+      lodLevel: 0
+      meshGeometryBuffer: 0
+    - index: 67
+      meshName: diaozhui3
+      lodLevel: 0
+      meshGeometryBuffer: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  overrideDefaultPose: 0
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    namedPoseList:
+    - name: Default
+      skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    defaultPoseIndex: -1
+    hasTranslationDoF: 0
+    hasExtraRoot: 1
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 3
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

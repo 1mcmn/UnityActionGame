@@ -41,6 +41,7 @@ public class PlayerAnimController : MonoBehaviour
     public void TriggerAttack() { if (animator != null) animator.SetTrigger("Attack"); }
     public void TriggerNextAttack() { if (animator != null) { animator.ResetTrigger("NextAttack"); animator.SetTrigger("NextAttack"); } }
     public void TriggerDodge() { if (animator != null) animator.SetTrigger("Dodge"); }
+    public void TriggerParry() { if (animator != null) animator.SetTrigger("Parry"); }
 
     public bool IsInState(string name, int layer = 0)
     {

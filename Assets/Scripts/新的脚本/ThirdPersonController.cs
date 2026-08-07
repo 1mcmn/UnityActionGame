@@ -1,24 +1,36 @@
 using System;
 using UnityEngine;
 
-public enum PlayerState { Idle, Move, Run, Dodge, Attack }
+public enum PlayerState { Idle, Move, Run, Dodge, Attack, Parry }
 
 [RequireComponent(typeof(Rigidbody))]
 public class ThirdPersonController : MonoBehaviour
 {
-    [Header("子模块")]
+    [Header("组件引用")]
+    [Tooltip("移动控制模块")]
     [SerializeField] private PlayerLocomotion locomotion;
+    [Tooltip("动画控制模块")]
     [SerializeField] private PlayerAnimController animCtrl;
+    [Tooltip("战斗模块")]
     [SerializeField] private PlayerCombat combat;
 
     [Header("地面检测")]
+    [Tooltip("地面所在 Layer")]
     [SerializeField] private LayerMask groundLayer = ~0;
+    [Tooltip("地面射线检测距离")]
     [SerializeField] private float groundCheckDistance = 0.2f;
 
     [Header("攻击手感")]
-    [SerializeField] private float _attackHitDelay    = 0.15f;  // 攻击判定延迟（秒）
-    [SerializeField] private float _attackStopDist    = 1.2f;   // 攻击时停在敌人前方的距离
-    [SerializeField] private float _attackLungeSpeed  = 3f;     // 攻击时向敌人突进速度
+    [Tooltip("攻击命中判定的延迟时间")]
+    [SerializeField] private float _attackHitDelay    = 0.15f;
+    [Tooltip("攻击时停在敌人前方的距离")]
+    [SerializeField] private float _attackStopDist    = 1.2f;
+    [Tooltip("攻击时向敌人突进的速度")]
+    [SerializeField] private float _attackLungeSpeed  = 3f;
+
+    [Header("弹刀")]
+    [Tooltip("弹刀动画持续时间")]
+    [SerializeField] private float _parryDuration     = 0.4f;
     private Collider characterCollider;
     private bool isGrounded;
 
@@ -26,6 +38,8 @@ public class ThirdPersonController : MonoBehaviour
     private Rigidbody rb;
     private Vector3 moveInput;
     private float dodgeTimer;
+    private float parryTimer;
+    private bool  _parryTriggered;
 
     // 当前帧的动画融合目标（只读，供 ApplyMovement 使用）
     private float blendTarget;
@@ -81,6 +95,7 @@ public class ThirdPersonController : MonoBehaviour
             case PlayerState.Run: UpdateRun(); break;
             case PlayerState.Dodge: UpdateDodge(); break;
             case PlayerState.Attack: UpdateAttack(); break;
+            case PlayerState.Parry: UpdateParry(); break;
         }
 
         TickAnimatorBlend();
@@ -89,7 +104,7 @@ public class ThirdPersonController : MonoBehaviour
     private void FixedUpdate()
     {
         // Attack/Dodge：消费 OnAnimatorMove 缓存的根运动 delta，通过刚体管线同步。
-        if (currentState == PlayerState.Attack || currentState == PlayerState.Dodge)
+        if (currentState == PlayerState.Attack || currentState == PlayerState.Dodge || currentState == PlayerState.Parry)
         {
             var (deltaPos, deltaRot) = animCtrl.ConsumeRootMotionDelta();
             if (deltaPos != Vector3.zero)
@@ -146,6 +161,13 @@ public class ThirdPersonController : MonoBehaviour
                 FaceNearestEnemy();
                 StartCoroutine(DelayedHitDetection(_attackHitDelay));
                 break;
+
+            case PlayerState.Parry:
+                parryTimer = _parryDuration;
+                combat.SetInvulnerable(true);
+                animCtrl.SetSyncRootMotion(true);
+                animCtrl.TriggerParry();
+                break;
         }
     }
 
@@ -160,6 +182,12 @@ public class ThirdPersonController : MonoBehaviour
 
             case PlayerState.Attack:
                 combat.ResetAllTimers();
+                animCtrl.SetSyncRootMotion(false);
+                locomotion.ResetBlending();
+                break;
+
+            case PlayerState.Parry:
+                combat.SetInvulnerable(false);
                 animCtrl.SetSyncRootMotion(false);
                 locomotion.ResetBlending();
                 break;
@@ -178,6 +206,9 @@ public class ThirdPersonController : MonoBehaviour
     {
         // 攻击始终最高优先级
         if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
+
+        // 弹刀
+        if (Input.GetMouseButtonDown(1)) { ChangeState(PlayerState.Parry); return; }
 
         // Shift 点击 → 前冲
         if (Input.GetKeyDown(KeyCode.LeftShift))
@@ -208,6 +239,9 @@ public class ThirdPersonController : MonoBehaviour
         // 攻击
         if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
 
+        // 弹刀
+        if (Input.GetMouseButtonDown(1)) { ChangeState(PlayerState.Parry); return; }
+
         // Shift 点击 → 前冲
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
@@ -228,6 +262,9 @@ public class ThirdPersonController : MonoBehaviour
 
         // 攻击
         if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
+
+        // 弹刀
+        if (Input.GetMouseButtonDown(1)) { ChangeState(PlayerState.Parry); return; }
 
         // Shift 点击 → 前冲
         if (Input.GetKeyDown(KeyCode.LeftShift))
@@ -254,6 +291,27 @@ public class ThirdPersonController : MonoBehaviour
         }
     }
 
+    private void UpdateParry()
+    {
+        parryTimer -= Time.deltaTime;
+
+        // 弹刀窗口内检测弹反
+        if (!_parryTriggered && combat.TryParry(transform.position))
+        {
+            _parryTriggered = true;
+            Debug.Log("[Controller] 弹刀成功！");
+        }
+
+        if (parryTimer <= 0f)
+        {
+            _parryTriggered = false;
+            if (moveInput.sqrMagnitude > 0.01f)
+                ChangeState(Input.GetKey(KeyCode.LeftShift) ? PlayerState.Run : PlayerState.Move);
+            else
+                ChangeState(PlayerState.Idle);
+        }
+    }
+
     private void UpdateAttack()
     {
         // 步骤 1：连击窗口（等价参考代码步骤 1）
@@ -272,12 +330,8 @@ public class ThirdPersonController : MonoBehaviour
             return;
         }
 
-        // 步骤 3：挥刀结束立刻判断 WASD（等价参考代码步骤 3）
-        if (moveInput.sqrMagnitude > 0.01f)
-        {
-            ChangeState(Input.GetKey(KeyCode.LeftShift) ? PlayerState.Run : PlayerState.Move);
-            return;
-        }
+        // 步骤 3：挥刀结束 → 等动画回到 BlendTree 再响应 WASD（见步骤 5）
+        // 不做切换，继续往下走步骤 4 和步骤 5
 
         // 步骤 4：强制退出保险（等价参考代码步骤 4）
         if (combat.IncrementForceExitTimer(Time.deltaTime))
