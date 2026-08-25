@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public enum PlayerState { Idle, Move, Run, Dodge, Attack, Parry, Hit, Dead }
+public enum PlayerState { Idle, Move, Run, Dodge, Attack, Parry, Block, Hit, Knockdown, Dead }
 
 [RequireComponent(typeof(Rigidbody))]
 public class ThirdPersonController : MonoBehaviour
@@ -30,6 +30,17 @@ public class ThirdPersonController : MonoBehaviour
     [Tooltip("弹刀动画持续时间")]
     [SerializeField] private float _parryDuration     = 0.4f;
 
+    [Header("格挡（小弹刀）")]
+    [Tooltip("每挡一刀的架势增量")]
+    [SerializeField] private float _blockPostureGain = 30f;
+    [Tooltip("格挡成功后被击退的距离")]
+    [SerializeField] private float _blockKnockbackDistance = 0.4f;
+    [Tooltip("击退位移时长（秒）")]
+    [SerializeField] private float _blockKnockbackDuration = 0.15f;
+    [Tooltip("架势满后倒地时长（秒）")]
+    [SerializeField] private float _knockdownDuration = 1.8f;
+    private float knockdownTimer;
+
     [Header("受击")]
     [Tooltip("受击硬直时长（秒，对应受击动画播放期间）")]
     [SerializeField] private float _hitDuration = 0.6f;
@@ -44,10 +55,22 @@ public class ThirdPersonController : MonoBehaviour
     private float parryTimer;
     private float hitTimer;
     private bool  _parryTriggered;
+    private Coroutine _knockbackRoutine;
 
     // 输入缓冲：防止180°转向时短暂无输入导致状态闪烁
     private float _inputBufferTimer;
     [SerializeField] private float _inputBufferDuration = 0.1f;
+
+    // 预输入缓冲（攻击/弹刀/闪避），窗口内按下的输入会被缓存并延迟触发
+    private float _bufferedAttack;
+    private float _bufferedParry;
+    private float _bufferedDodge;
+    private const float INPUT_BUFFER_WINDOW = 0.18f;
+
+    // 脚步声
+    private float _stepTimer;
+    [SerializeField] private float _walkStepInterval = 0.5f;
+    [SerializeField] private float _runStepInterval = 0.3f;
 
     // 当前帧的动画融合目标（只读，供 ApplyMovement 使用）
     private float blendTarget;
@@ -56,10 +79,58 @@ public class ThirdPersonController : MonoBehaviour
     public float CurrentHealth => combat != null ? combat.CurrentHealth : 0f;
     public float MaxHealth => combat != null ? combat.MaxHealth : 0f;
 
+    public bool IsBlocking => currentState == PlayerState.Block || currentState == PlayerState.Parry;
+
     public void TryTakeDamage(float damage, Vector3? attackerPosition = null)
     {
-        if (combat != null)
-            combat.TakeDamage(damage, attackerPosition);
+        if (combat == null) return;
+
+        // 格挡拦截：格挡/弹刀期间受到的攻击不扣血，改为架势积累 + 击退反馈
+        if (IsBlocking)
+        {
+            OnBlockedHit(damage, attackerPosition);
+            return;
+        }
+
+        combat.TakeDamage(damage, attackerPosition);
+    }
+
+    /// <summary>格挡命中：泄力动画 + 小击退 + 架势积累；架势满则倒地</summary>
+    private void OnBlockedHit(float damage, Vector3? attackerPosition)
+    {
+        combat.AddPosture(_blockPostureGain);
+
+        // 泄力动画（攻击倒放，动画机 Deflect 状态）+ 格挡音效
+        animCtrl.TriggerDeflect();
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.Play("sword_hit_03", transform.position);
+
+        // 小击退：朝攻击者的反方向
+        Vector3 dir = attackerPosition.HasValue
+            ? (transform.position - attackerPosition.Value).normalized
+            : -transform.forward;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.01f) dir = -transform.forward;
+        if (_knockbackRoutine != null) StopCoroutine(_knockbackRoutine);  // 连挡时重启击退，防止多个击退协程叠加漂移
+        _knockbackRoutine = StartCoroutine(KnockbackRoutine(dir, _blockKnockbackDistance, _blockKnockbackDuration));
+
+        // 架势满 → 击飞（倒地）
+        if (combat.IsPostureBroken)
+            ChangeState(PlayerState.Knockdown);
+    }
+
+    /// <summary>参数化击退：在 duration 内沿 dir 位移 distance（根运动状态下也稳定）</summary>
+    private System.Collections.IEnumerator KnockbackRoutine(Vector3 dir, float distance, float duration)
+    {
+        Vector3 start = rb.position;
+        Vector3 end = start + dir * distance;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            rb.MovePosition(Vector3.Lerp(start, end, Mathf.Min(1f, t / duration)));
+            yield return null;
+        }
     }
 
     /// <summary>刷新摄像机引用（开始界面进入游戏后调用）</summary>
@@ -114,6 +185,7 @@ public class ThirdPersonController : MonoBehaviour
     private void Update()
     {
         ReadInput();
+        TickInputBuffers();
         CheckGrounded();
 
         switch (currentState)
@@ -124,18 +196,22 @@ public class ThirdPersonController : MonoBehaviour
             case PlayerState.Dodge: UpdateDodge(); break;
             case PlayerState.Attack: UpdateAttack(); break;
             case PlayerState.Parry: UpdateParry(); break;
+            case PlayerState.Block: UpdateBlock(); break;
             case PlayerState.Hit: UpdateHit(); break;
+            case PlayerState.Knockdown: UpdateKnockdown(); break;
             case PlayerState.Dead: break;
         }
 
         TickAnimatorBlend();
+        UpdateFootsteps();
     }
 
     private void FixedUpdate()
     {
         // 所有状态的位移由 OnAnimatorMove（根运动）驱动，这里只处理转向
         if (currentState == PlayerState.Attack || currentState == PlayerState.Dodge || currentState == PlayerState.Parry
-            || currentState == PlayerState.Hit || currentState == PlayerState.Dead)
+            || currentState == PlayerState.Block || currentState == PlayerState.Hit
+            || currentState == PlayerState.Knockdown || currentState == PlayerState.Dead)
             return;
 
         locomotion.RotateToward(moveInput);
@@ -147,6 +223,31 @@ public class ThirdPersonController : MonoBehaviour
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
         moveInput = locomotion.GetCameraRelativeInput(h, v);
+
+        // 记录按键并写入预输入缓冲
+        if (Input.GetMouseButtonDown(0)) _bufferedAttack = INPUT_BUFFER_WINDOW;
+        if (Input.GetMouseButtonDown(1)) _bufferedParry = INPUT_BUFFER_WINDOW;
+        if (Input.GetKeyDown(KeyCode.LeftShift)) _bufferedDodge = INPUT_BUFFER_WINDOW;
+    }
+
+    /// <summary>每帧递减预输入缓冲计时器</summary>
+    private void TickInputBuffers()
+    {
+        float dt = Time.deltaTime;
+        _bufferedAttack = Mathf.Max(0f, _bufferedAttack - dt);
+        _bufferedParry = Mathf.Max(0f, _bufferedParry - dt);
+        _bufferedDodge = Mathf.Max(0f, _bufferedDodge - dt);
+    }
+
+    private bool ConsumeBufferedAttack() => ConsumeBuffered(ref _bufferedAttack);
+    private bool ConsumeBufferedParry() => ConsumeBuffered(ref _bufferedParry);
+    private bool ConsumeBufferedDodge() => ConsumeBuffered(ref _bufferedDodge);
+
+    private bool ConsumeBuffered(ref float b)
+    {
+        if (b <= 0f) return false;
+        b = 0f;
+        return true;
     }
 
     // ─── 状态机 ──────────────────────────────────────
@@ -183,6 +284,18 @@ public class ThirdPersonController : MonoBehaviour
                 animCtrl.TriggerParry();
                 break;
 
+            case PlayerState.Block:
+                combat.SetInvulnerable(true);   // 格挡期间不扣血（由 TryTakeDamage 拦截）
+                animCtrl.SetBlocking(true);     // 切到格挡循环动画
+                locomotion.Halt();
+                break;
+
+            case PlayerState.Knockdown:
+                knockdownTimer = _knockdownDuration;
+                animCtrl.TriggerKnockdown();
+                locomotion.Halt();
+                break;
+
             case PlayerState.Hit:
                 hitTimer = _hitDuration;
                 locomotion.Halt();
@@ -212,6 +325,12 @@ public class ThirdPersonController : MonoBehaviour
                 combat.SetInvulnerable(false);
                 locomotion.ResetBlending();
                 break;
+
+            case PlayerState.Block:
+                combat.SetInvulnerable(false);
+                animCtrl.SetBlocking(false);
+                locomotion.ResetBlending();
+                break;
         }
     }
 
@@ -226,13 +345,14 @@ public class ThirdPersonController : MonoBehaviour
     private void UpdateIdle()
     {
         // 攻击始终最高优先级
-        if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
+        if (ConsumeBufferedAttack()) { ChangeState(PlayerState.Attack); return; }
 
         // 弹刀
-        if (Input.GetMouseButtonDown(1)) { ChangeState(PlayerState.Parry); return; }
+        if (ConsumeBufferedParry()) { ChangeState(PlayerState.Parry); return; }
+        if (Input.GetMouseButton(1)) { ChangeState(PlayerState.Block); return; }
 
         // Shift 点击 → 前冲
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        if (ConsumeBufferedDodge())
         {
             ChangeState(PlayerState.Dodge);
             return;
@@ -264,13 +384,14 @@ public class ThirdPersonController : MonoBehaviour
         _inputBufferTimer = 0f;
 
         // 攻击
-        if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
+        if (ConsumeBufferedAttack()) { ChangeState(PlayerState.Attack); return; }
 
         // 弹刀
-        if (Input.GetMouseButtonDown(1)) { ChangeState(PlayerState.Parry); return; }
+        if (ConsumeBufferedParry()) { ChangeState(PlayerState.Parry); return; }
+        if (Input.GetMouseButton(1)) { ChangeState(PlayerState.Block); return; }
 
         // Shift 点击 → 前冲
-        if (Input.GetKeyDown(KeyCode.LeftShift)) { ChangeState(PlayerState.Dodge); return; }
+        if (ConsumeBufferedDodge()) { ChangeState(PlayerState.Dodge); return; }
 
         // blend 加速未完成 → 阻塞 Run 切换（防瞬移）
         if (!locomotion.IsBlendingComplete) return;
@@ -290,13 +411,14 @@ public class ThirdPersonController : MonoBehaviour
         _inputBufferTimer = 0f;
 
         // 攻击
-        if (Input.GetMouseButtonDown(0)) { ChangeState(PlayerState.Attack); return; }
+        if (ConsumeBufferedAttack()) { ChangeState(PlayerState.Attack); return; }
 
         // 弹刀
-        if (Input.GetMouseButtonDown(1)) { ChangeState(PlayerState.Parry); return; }
+        if (ConsumeBufferedParry()) { ChangeState(PlayerState.Parry); return; }
+        if (Input.GetMouseButton(1)) { ChangeState(PlayerState.Block); return; }
 
         // Shift 点击 → 前冲
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        if (ConsumeBufferedDodge())
         {
             ChangeState(PlayerState.Dodge);
             return;
@@ -334,10 +456,36 @@ public class ThirdPersonController : MonoBehaviour
         if (parryTimer <= 0f)
         {
             _parryTriggered = false;
+            // 按住右键 → 进入持续格挡；松开 → 回到移动/待机
+            if (Input.GetMouseButton(1)) { ChangeState(PlayerState.Block); return; }
             if (moveInput.sqrMagnitude > 0.01f)
                 ChangeState(Input.GetKey(KeyCode.LeftShift) ? PlayerState.Run : PlayerState.Move);
             else
                 ChangeState(PlayerState.Idle);
+        }
+    }
+
+    private void UpdateBlock()
+    {
+        // 格挡中：松开右键退出，回到移动/待机
+        if (!Input.GetMouseButton(1))
+        {
+            if (moveInput.sqrMagnitude > 0.01f)
+                ChangeState(Input.GetKey(KeyCode.LeftShift) ? PlayerState.Run : PlayerState.Move);
+            else
+                ChangeState(PlayerState.Idle);
+        }
+    }
+
+    private void UpdateKnockdown()
+    {
+        // 倒地期间锁输入，起身后架势清零
+        knockdownTimer -= Time.deltaTime;
+        if (knockdownTimer <= 0f)
+        {
+            combat.ResetPosture();
+            animCtrl.TriggerGetUp();
+            ChangeState(PlayerState.Idle);
         }
     }
 
@@ -351,8 +499,16 @@ public class ThirdPersonController : MonoBehaviour
 
     private void UpdateAttack()
     {
+        // 取消窗口：攻击收招后段（进度 > 55%）可用闪避/弹刀打断
+        if (combat.AttackProgress01 > 0.55f)
+        {
+            if (ConsumeBufferedDodge()) { ChangeState(PlayerState.Dodge); return; }
+            if (ConsumeBufferedParry()) { ChangeState(PlayerState.Parry); return; }
+        if (Input.GetMouseButton(1)) { ChangeState(PlayerState.Block); return; }
+        }
+
         // 步骤 1：缓冲连击输入（按下即缓存，窗口内自动接上）
-        if (Input.GetMouseButtonDown(0))
+        if (ConsumeBufferedAttack())
         {
             combat.BufferCombo();
         }
@@ -399,6 +555,26 @@ public class ThirdPersonController : MonoBehaviour
         animCtrl.SetMovement(result.blend);
         animCtrl.SetLastMoveSpeed(result.lastTarget);
         animCtrl.SetRun(currentState == PlayerState.Run);
+    }
+
+    /// <summary>移动时按步频播放脚步声（跑步更快）</summary>
+    private void UpdateFootsteps()
+    {
+        bool moving = currentState == PlayerState.Move || currentState == PlayerState.Run;
+        if (!moving)
+        {
+            _stepTimer = 0f;
+            return;
+        }
+
+        float interval = currentState == PlayerState.Run ? _runStepInterval : _walkStepInterval;
+        _stepTimer -= Time.deltaTime;
+        if (_stepTimer <= 0f)
+        {
+            _stepTimer = interval;
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.PlayByPrefix("foot_step", transform.position, 0.9f, 1.1f);
+        }
     }
 
     // ─── 地面检测 ─────────────────────────────────────

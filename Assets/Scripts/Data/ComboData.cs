@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 连击数据资产。把攻击时长/半径/各段伤害从代码解耦，
-/// 供技能编辑器（Skill Editor）可视化编辑，运行时读取。
+/// 供 Inspector 直接配置，运行时读取。
 /// </summary>
 [CreateAssetMenu(fileName = "ComboData", menuName = "Combat/ComboData")]
 public class ComboData : ScriptableObject

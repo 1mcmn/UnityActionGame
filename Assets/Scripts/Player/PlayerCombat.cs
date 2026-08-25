@@ -59,6 +59,9 @@ public class PlayerCombat : MonoBehaviour
 
     public bool IsAttacking => attackTimer > 0f;
 
+    /// <summary>攻击进度（0=刚起手，1=收招结束）。供状态机判断取消窗口。</summary>
+    public float AttackProgress01 => AttackDuration > 0.0001f ? 1f - attackTimer / AttackDuration : 1f;
+
     /// <summary>连击输入缓冲：前摇阶段按下也缓存，窗口内自动接下一段。</summary>
     public void BufferCombo() => _comboBuffered = true;
 
@@ -81,6 +84,7 @@ public class PlayerCombat : MonoBehaviour
         attackTimer = AttackDuration;
         _comboStep++;
         _comboBuffered = false;
+        PlaySwingSfx();
         return true;
     }
 
@@ -97,6 +101,7 @@ public class PlayerCombat : MonoBehaviour
         forceExitTimer = 0f;
         _comboStep = 0;
         _comboBuffered = false;
+        PlaySwingSfx();
     }
 
     /// <summary>每帧递减攻击计时器（步骤 2）。仅在 IsAttacking 时调用。</summary>
@@ -159,6 +164,20 @@ public class PlayerCombat : MonoBehaviour
             SoundManager.Instance.PlayByPrefix(prefix, transform.position);
     }
 
+    /// <summary>播放当前攻击段的挥砍音效（atk0X_swing，X=段号）</summary>
+    private void PlaySwingSfx()
+    {
+        int seg = Mathf.Clamp(_comboStep + 1, 1, 5);
+        PlaySfx($"atk0{seg}_swing");
+    }
+
+    /// <summary>播放当前攻击段的命中音效（atk0X_hit，X=段号）</summary>
+    private void PlayHitSfxByStep()
+    {
+        int seg = Mathf.Clamp(_comboStep + 1, 1, 5);
+        PlaySfx($"atk0{seg}_hit");
+    }
+
     /// <summary>Animation Event：播放脚步声（自动随机 pitch 0.9~1.1，避免短音效重复感）</summary>
     public void PlayFootstepSfx(string prefix)
     {
@@ -185,6 +204,13 @@ public class PlayerCombat : MonoBehaviour
                 DamagePopupManager.Instance?.Show(col.bounds.center, CurrentAttackDamage);
             }
         }
+
+        // 命中后：播放命中音效 + 顿帧（打击感核心）
+        if (_hasHitThisSwing)
+        {
+            PlayHitSfxByStep();
+            TriggerHitStop();
+        }
     }
 
     /// <summary>Animation Event：播指定前缀的命中音效（未命中自动跳过，String 栏填前缀，如 atk01_hit）</summary>
@@ -199,6 +225,12 @@ public class PlayerCombat : MonoBehaviour
     public void TriggerHitStop()
     {
         if (!_hasHitThisSwing) return;
+        StartCoroutine(HitStopRoutine());
+    }
+
+    /// <summary>强制触发顿帧（弹刀等非命中场景使用）</summary>
+    public void TriggerHitStopForce()
+    {
         StartCoroutine(HitStopRoutine());
     }
 
@@ -244,6 +276,26 @@ public class PlayerCombat : MonoBehaviour
 
     public void SetInvulnerable(bool value) => isInvulnerable = value;
 
+    // ─── 格挡架势（小弹刀）────────────────────────
+    [Header("格挡架势")]
+    [Tooltip("架势上限，满了触发击飞（倒地）")]
+    [SerializeField] private float maxPosture = 100f;
+    private float _posture;
+
+    public float Posture => _posture;
+    public float MaxPosture => maxPosture;
+    public bool IsPostureBroken => _posture >= maxPosture;
+
+    /// <summary>格挡受击时累加架势值，满值由 ThirdPersonController 切 Knockdown 状态</summary>
+    public void AddPosture(float amount)
+    {
+        if (_posture >= maxPosture) return;
+        _posture = Mathf.Min(maxPosture, _posture + amount);
+    }
+
+    /// <summary>起身时清零架势</summary>
+    public void ResetPosture() => _posture = 0f;
+
     // ─── 弹反 ──────────────────────────────────────
 
     /// <summary>
@@ -263,6 +315,11 @@ public class PlayerCombat : MonoBehaviour
                 enemyAI.OnParried(origin);
                 hitAny = true;
                 Debug.Log($"[Combat] 弹反成功！{col.name}");
+
+                // 弹刀成功反馈：金属碰撞音效 + 顿帧
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Play("sword_hit_03", transform.position);
+                TriggerHitStopForce();
             }
         }
 

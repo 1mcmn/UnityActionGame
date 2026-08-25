@@ -494,8 +494,8 @@ public class EnemyAI : MonoBehaviour
                 _targetAnimSpeed = 1f;
                 EnsureKinematicOff();
                 if (_rigidbody != null) _rigidbody.velocity = Vector3.zero;
-                CrossFade("Goblin_Ani_Run_Start", 0.1f);
-                _stateTimer = ClipLength("Goblin_Ani_Run_Start");
+                CrossFade(_locomotionHash, 0.1f); // 无 Run_Start 动画，混合树 Speed=1 自然起跑
+                _stateTimer = 0.4f;
                 break;
 
             case EnemyState.Run:
@@ -509,8 +509,8 @@ public class EnemyAI : MonoBehaviour
                 _targetAnimSpeed = 0f;
                 EnsureKinematicOff();
                 if (_rigidbody != null) _rigidbody.velocity = Vector3.zero;
-                CrossFade("Goblin_Ani_Run_End", 0.1f);
-                _stateTimer = ClipLength("Goblin_Ani_Run_End");
+                CrossFade(_locomotionHash, 0.1f); // 无 Run_End 动画，混合树 Speed→0 自然停步
+                _stateTimer = 0.4f;
                 break;
 
             case EnemyState.Attack:
