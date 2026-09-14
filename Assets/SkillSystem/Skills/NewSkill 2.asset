@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: NewSkill 2
   m_EditorClassIdentifier: 
   skillId: player_uppercut
-  skillName: "\u4E0A\u635E\u65A9"
+  skillName: "\u632F\u5200"
   components:
   - rid: 1631846285180934
   - rid: 1631846285180935
@@ -28,27 +28,27 @@ MonoBehaviour:
         displayName: 
         stateName: AT1
         crossFade: 0.1
-        duration: 0.5
+        duration: 2
         frameEvents:
-        - frame: 27
+        - frame: 8
           soundId: k
           volume: 1
           loop: 0
-        - frame: 50
-          soundId: k
-          volume: 1
-          loop: 0
+        overrideClip: {fileID: 0}
+        baseClip: {fileID: -203655887218126122, guid: 6c97b7f8a0b35124b9c485b0f42c565c, type: 3}
     - rid: 1631846285180935
       type: {class: HitWindowComponent, ns: SkillSystem, asm: Game}
       data:
         displayName: 
         startFrame: 5
         endFrame: 15
-        shape: 0
-        radius: 1.5
-        capsuleLength: 1.2
-        boxHalfExtents: {x: 0.6, y: 0.4, z: 0.6}
-        offset: {x: 0, y: 0.5, z: 0.5}
+        attachNodeName: Armature/Root/J_Bip_C_Hips/J_Bip_C_Spine/J_Bip_C_Chest/J_Bip_C_UpperChest/J_Bip_R_Shoulder/J_Bip_R_UpperArm/J_Bip_R_LowerArm/J_Bip_R_Hand/Weapon_Socket
+        shape: 1
+        radius: 0.070213504
+        capsuleLength: 1.5
+        boxHalfExtents: {x: 0.19, y: 0.4, z: 0.6}
+        offset: {x: 0.042234596, y: 0.3421953, z: 0.26732436}
+        rotationOffset: {x: -57.703735, y: 6.423, z: 26.060923}
         targetMask:
           serializedVersion: 2
           m_Bits: 128
@@ -58,9 +58,13 @@ MonoBehaviour:
         feedbackComponent:
           displayName: 
           soundIdPrefix: hit_
+          blockSoundIdPrefix: block_
+          parrySoundIdPrefix: parry_
           hitStopDuration: 0.05
           hitStopTimeScale: 0.1
+          blockedHitStopDuration: 0.08
           knockbackDistance: 0.5
+        blockedDamageScale: 0.2
     - rid: 1631846285180936
       type: {class: DamageComponent, ns: SkillSystem, asm: Game}
       data:
@@ -71,6 +75,9 @@ MonoBehaviour:
       data:
         displayName: 
         soundIdPrefix: hit_
+        blockSoundIdPrefix: block_
+        parrySoundIdPrefix: parry_
         hitStopDuration: 0.05
         hitStopTimeScale: 0.1
+        blockedHitStopDuration: 0.08
         knockbackDistance: 0.5

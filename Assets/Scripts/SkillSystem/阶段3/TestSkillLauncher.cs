@@ -5,7 +5,7 @@ public class TestSkillLauncher : MonoBehaviour
 {
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.J))   // 释放技能
+        if (Input.GetMouseButtonUp(1))   // 释放技能
         {
             Vector3 targetPos = transform.position + transform.forward * 2f;
             SkillManager.Instance.PlaySkill("player_uppercut", transform, targetPos);

@@ -24,7 +24,8 @@ namespace SkillSystem
             InterruptAllSkills();   // 角色销毁时清理所有运行中技能
             if (Instance == this) Instance = null;
         }
-        public void PlaySkill(string id, Transform caster, Vector3 targetPos, Transform target = null)
+        public void PlaySkill(string id, Transform caster, Vector3 targetPos, Transform target = null,
+                              bool interruptOthers = false)
         {
             if (library == null)
             {
@@ -34,12 +35,15 @@ namespace SkillSystem
             SkillConfig config = library.Get(id);
             if (config == null)
             {
-                Debug.LogWarning("查找不到组件");
+                Debug.LogWarning($"查找不到技能: {id}（不在 SkillLibrary 的列表里？）");
                 return;
             }
 
             // 同 ID 唯一：重复释放先打断旧实例（重放即重开），防止实例叠加、日志刷屏
-            InterruptSkill(id);
+            // interruptOthers=true：先清掉所有正在跑的技能（互斥切换，例如"架势 → 振刀"）
+            // 默认 false：只打断同 ID，保持原有行为
+            if (interruptOthers) InterruptAllSkills();
+            else InterruptSkill(id);
 
             SkillContext ctx = new SkillContext(caster, targetPos, target,id);
             SkillInstance instance = new SkillInstance(config,ctx);
@@ -56,6 +60,17 @@ namespace SkillSystem
                 ? $"[Skill] {id}: Released → Running"
                 : $"[Skill] {id}: Released → Interrupted（OnStart 期间被打断）");
         }
+        /// <summary>
+        /// 技能切换：把 fromId 打断（如果正在跑），立刻释放 toId。
+        /// 这是"由交互/条件触发的动画切换"的官方通道 —— 振刀就是靠它：
+        ///   parry_hold（duration=0，一直播架势）→ 判定成功 → SwitchSkill("parry_hold","parry_deflect")
+        /// </summary>
+        public void SwitchSkill(string fromId, string toId, Transform caster, Vector3 targetPos, Transform target = null)
+        {
+            if (!string.IsNullOrEmpty(fromId)) InterruptSkill(fromId);
+            PlaySkill(toId, caster, targetPos, target);
+        }
+
         public void InterruptSkill(string id)
         {
             for (int i = activeSkills.Count - 1; i >= 0; i--)

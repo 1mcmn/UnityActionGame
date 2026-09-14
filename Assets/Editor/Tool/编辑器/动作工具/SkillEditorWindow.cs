@@ -72,7 +72,19 @@ namespace SkillSystem
         // ── P0-2(A) 玩家动画机状态表：stateName 校验 + 自动解析出真正的 clip ──
         private Dictionary<string, AnimationClip> playerStates;
         private readonly Dictionary<string, float> playerStateSpeeds = new Dictionary<string, float>();
+        // state 在【基础 controller】里原本绑的 clip —— 这是 AnimatorOverrideController 的映射 key
+        private readonly Dictionary<string, AnimationClip> playerBaseClips = new Dictionary<string, AnimationClip>();
         private string playerStatesSource = "";
+
+        // ── B：判定盒 SceneView 可视化 + 手柄调参 ──
+        private bool showHitBoxGizmo = true;
+
+        // ── P1-4 编辑器状态持久化（SessionState：关窗口/重编译都不丢）──
+        private const string SS_PreviewClip = "SkillEditor.PreviewClipId";
+        private const string SS_PreviewTarget = "SkillEditor.PreviewTargetId";
+        private const string SS_PreviewLoop = "SkillEditor.PreviewLoop";
+        private const string SS_Audition = "SkillEditor.AuditionSfx";
+        private const string SS_SkillId = "SkillEditor.SelectedSkillId";
 
         // 基础组件注册表：右侧添加组件时的可选类型（与参考视频的"基础组件"概念对应）
         private static readonly Dictionary<string, Type> ComponentTypes = new Dictionary<string, Type>
@@ -95,12 +107,16 @@ namespace SkillSystem
         {
             LoadOrCreateLibrary();
             LoadSoundData();
-            EditorApplication.update += OnEditorUpdate;   // 预览播放的驱动（P0-3 第一步）
+            RestoreEditorState();                          // 恢复上次的预览目标/预览动画/选中的技能
+            EditorApplication.update += OnEditorUpdate;    // 预览播放的驱动（P0-3 第一步）
+            SceneView.duringSceneGui += OnSceneGUI;        // B：判定盒可视化
         }
 
         private void OnDisable()
         {
+            SaveEditorState();                             // 关窗口也记住，下次不用重选
             EditorApplication.update -= OnEditorUpdate;
+            SceneView.duringSceneGui -= OnSceneGUI;
             previewPlaying = false;
             ExitAnimationMode();                 // 只关自己开的动画模式；StopAnimationMode 会把场景姿态还原
             lastSampledTarget = null;
@@ -108,6 +124,49 @@ namespace SkillSystem
             {
                 DestroyImmediate(previewSource.gameObject);
                 previewSource = null;
+            }
+        }
+
+        // ──────────────── 编辑器状态持久化（P1-4）────────────────
+
+        private void SaveEditorState()
+        {
+            SessionState.SetInt(SS_PreviewClip, previewClip != null ? previewClip.GetInstanceID() : 0);
+            SessionState.SetInt(SS_PreviewTarget, previewTarget != null ? previewTarget.GetInstanceID() : 0);
+            SessionState.SetBool(SS_PreviewLoop, previewLoop);
+            SessionState.SetBool(SS_Audition, previewAuditionSfx);
+
+            string id = "";
+            if (skillsProperty != null && selectedSkillIndex >= 0 && selectedSkillIndex < skillsProperty.arraySize)
+            {
+                var cfg = skillsProperty.GetArrayElementAtIndex(selectedSkillIndex).objectReferenceValue as SkillConfig;
+                if (cfg != null) id = cfg.skillId;
+            }
+            SessionState.SetString(SS_SkillId, id);
+        }
+
+        private void RestoreEditorState()
+        {
+            int clipId = SessionState.GetInt(SS_PreviewClip, 0);
+            if (clipId != 0) previewClip = EditorUtility.InstanceIDToObject(clipId) as AnimationClip;
+
+            int targetId = SessionState.GetInt(SS_PreviewTarget, 0);
+            if (targetId != 0) previewTarget = EditorUtility.InstanceIDToObject(targetId) as Animator;
+
+            previewLoop = SessionState.GetBool(SS_PreviewLoop, true);
+            previewAuditionSfx = SessionState.GetBool(SS_Audition, true);
+
+            // 按 skillId 恢复上次选中的技能（按下标会漂移）
+            string lastSkillId = SessionState.GetString(SS_SkillId, "");
+            if (string.IsNullOrEmpty(lastSkillId) || skillsProperty == null) return;
+
+            for (int i = 0; i < skillsProperty.arraySize; i++)
+            {
+                var cfg = skillsProperty.GetArrayElementAtIndex(i).objectReferenceValue as SkillConfig;
+                if (cfg == null || cfg.skillId != lastSkillId) continue;
+                selectedSkillIndex = i;
+                LoadSelectedSkill();
+                break;
             }
         }
 
@@ -283,9 +342,12 @@ namespace SkillSystem
             skillNameProperty = skillSerializedObject.FindProperty("skillName");
             componentsProperty = skillSerializedObject.FindProperty("components");
             componentsList = null; // 强制重建组件列表
-            selectedComponentIndex = -1;
             frameEventsList = null;
             frameEventsProperty = null;
+
+            // 帧事件挂在「播放动画」组件上 —— 选中技能就自动指到第一个，省得用户找不到表格
+            selectedComponentIndex = FindFirstPlayAnimationIndex();
+            if (selectedComponentIndex >= 0) RebuildFrameEventList();
         }
 
         private void DrawSkillInspector()
@@ -312,6 +374,8 @@ namespace SkillSystem
             componentsList.DoLayoutList();
 
             // 阶段 5：帧事件表格 + 动画预览（仅选中"播放动画"组件时显示）
+            showHitBoxGizmo = EditorGUILayout.ToggleLeft(
+                "在 Scene 视图显示判定盒（选中「判定窗口」组件后可拖手柄改大小/偏移）", showHitBoxGizmo);
             DrawStateNameCheck();     // P0-2(A)：用玩家动画机校验 stateName 是否存在
             DrawFrameEventTable();
             DrawAnimationPreviewPanel();
@@ -374,7 +438,16 @@ namespace SkillSystem
                     if (prop.name == "frameEvents") continue;   // 帧事件走下方专属表格
 
                     float h = EditorGUI.GetPropertyHeight(prop, true);
-                    EditorGUI.PropertyField(new Rect(rect.x + 15, y, rect.width - 15, h), prop, true);
+                    if (prop.name == "attachNodeName")
+                    {
+                        DrawAttachNodeField(new Rect(rect.x + 15, y, rect.width - 15, h), prop);
+                        y += h + 2;
+                        continue;
+                    }
+                    bool readOnly = prop.name == "baseClip";      // 自动填充字段，禁止手改
+                    if (readOnly) EditorGUI.BeginDisabledGroup(true);
+                    EditorGUI.PropertyField(new Rect(rect.x + 15, y, rect.width - 15, h), prop, GetFieldLabel(prop), true);
+                    if (readOnly) EditorGUI.EndDisabledGroup();
                     y += h + 2;
                 }
             };
@@ -420,6 +493,249 @@ namespace SkillSystem
                 selectedComponentIndex = -1;
                 RebuildFrameEventList();
             };
+        }
+
+        /// <summary>
+        /// 组件里几个"名字看不出含义"的字段，给中文标签 + 悬停说明。
+        /// （字段名本身不能改，改了会破坏已有资产的序列化）
+        /// </summary>
+        private static readonly Dictionary<string, GUIContent> FieldLabelOverrides = new Dictionary<string, GUIContent>
+        {
+            { "displayName",   new GUIContent("displayName（显示名）", "只影响编辑器里显示，可留空") },
+            { "stateName",     new GUIContent("stateName（动画机状态名）", "必须是 Animator 里的【状态名】，不是 clip 名。写错的话按 J 动作不会变。") },
+            { "overrideClip",  new GUIContent("overrideClip（★动画覆盖·可选）", "填了 = 运行时用 AnimatorOverrideController 把这个状态的动画换成它（策划换动画不用碰 Animator）。留空 = 播状态原本的动画。") },
+            { "baseClip",      new GUIContent("baseClip（原动画·自动填充）", "stateName 状态在【基础 controller】里原本绑的 clip。由编辑器自动解析写入，运行时用它做覆盖映射 —— 请不要手改。") },
+            { "crossFade",     new GUIContent("crossFade（过渡秒数）", "0.1 = 平滑过渡；0.02~0.05 = 瞬间切换（振刀/受击这类）") },
+            { "duration",      new GUIContent("duration（★技能总时长·秒）", "整个技能跑这么久就结束。帧事件的帧号必须落在 duration×帧率 之内，否则永远不会触发。填 0 = 不自动结束，一直播到被 InterruptSkill / 切技能打断（架势、循环类用）。") },
+            { "startFrame",    new GUIContent("startFrame（判定起始帧）", "判定窗口的起始帧号") },
+            { "endFrame",      new GUIContent("endFrame（判定结束帧）", "判定窗口的结束帧号") },
+            { "attachNodeName", new GUIContent("attachNodeName（★绑定节点名）", "填骨骼名字（如 J_Bip_R_Hand）或相对路径。留空 = 挂在角色根节点（判定不跟动画走 → 隔空）。ScriptableObject 不能引用场景对象，所以这里存名字。") },
+            { "shape",         new GUIContent("shape（检测形状）", "Sphere 球 / Capsule 胶囊（刀剑，沿节点前向）/ Box 盒（锤）") },
+            { "radius",        new GUIContent("radius（检测半径）", "角色高 1.6m 时，单手武器建议 0.15~0.25；别再用 1.5 那种大球") },
+            { "capsuleLength", new GUIContent("capsuleLength（刃长）", "胶囊沿节点前向的总长度，单手剑约 0.6~0.8") },
+            { "offset",        new GUIContent("offset（相对节点的偏移）", "从节点出发、沿节点朝向的偏移量；用来把判定盒挪到刀身中部") },
+            { "rotationOffset", new GUIContent("rotationOffset（★朝向对齐·欧拉角）", "判定盒相对绑定节点的旋转偏移。骨骼轴向通常不沿刀身，用这个转过来对准武器（最直观是拖 Scene 视图里的旋转圈）。") },
+            { "blockedDamageScale", new GUIContent("blockedDamageScale（格挡减伤倍率）", "被格挡时只吃这个比例的伤害，0.2 = 只吃 20%") },
+            { "blockSoundIdPrefix", new GUIContent("blockSoundIdPrefix（格挡音效前缀）", "被格挡时播这个前缀下的音效，如 block_") },
+            { "parrySoundIdPrefix", new GUIContent("parrySoundIdPrefix（弹反音效前缀）", "被弹反时播这个前缀下的音效，如 parry_") },
+            { "blockedHitStopDuration", new GUIContent("blockedHitStopDuration（格挡/弹反顿帧·秒）", "格挡比命中的顿帧更长，手感更「重」") },
+            { "damage",        new GUIContent("damage（伤害数值）", "") },
+            { "soundIdPrefix", new GUIContent("soundIdPrefix（命中音效前缀）", "命中时按这个前缀随机播一条，例：hit_") },
+            { "hitStopDuration", new GUIContent("hitStopDuration（顿帧时长·秒）", "命中瞬间画面暂停的现实秒数") },
+            { "hitStopTimeScale", new GUIContent("hitStopTimeScale（顿帧缩放）", "0.1 = 放到 10% 速度") },
+        };
+
+        private static GUIContent GetFieldLabel(SerializedProperty prop)
+        {
+            if (prop != null && FieldLabelOverrides.TryGetValue(prop.name, out var content))
+                return content;
+            return new GUIContent(prop != null ? prop.displayName : "?", prop != null ? prop.tooltip : "");
+        }
+
+        // ──────────────── B：绑定节点下拉 + 判定盒可视化 ────────────────
+
+        /// <summary>
+        /// 绑定节点用「下拉选骨骼」而不是拖 Transform。
+        /// 原因：ScriptableObject 资产不允许引用场景对象 —— 拖进去也会被清空。
+        /// </summary>
+        private void DrawAttachNodeField(Rect rect, SerializedProperty prop)
+        {
+            Rect fieldRect = EditorGUI.PrefixLabel(rect, GetFieldLabel(prop));
+            var options = GetBonePathOptions();
+
+            if (options.Count == 0)
+            {
+                // 拿不到骨骼（没指定预览目标）→ 退化为手输
+                prop.stringValue = EditorGUI.TextField(fieldRect, prop.stringValue ?? "");
+                return;
+            }
+
+            var display = new List<string> { "（不绑定 = 跟随角色根节点）" };
+            display.AddRange(options);
+
+            int cur = options.IndexOf(prop.stringValue ?? "");
+            int newIdx = EditorGUI.Popup(fieldRect, cur < 0 ? 0 : cur + 1, display.ToArray());
+            if (newIdx != cur + 1)
+                prop.stringValue = newIdx == 0 ? "" : options[newIdx - 1];
+        }
+
+        /// <summary>预览目标身上所有骨骼的相对路径（手/武器相关排前面）</summary>
+        private List<string> GetBonePathOptions()
+        {
+            var list = new List<string>();
+            var anim = ResolvePreviewTarget();
+            if (anim == null) return list;
+
+            Transform root = anim.transform;
+            foreach (var t in anim.GetComponentsInChildren<Transform>(true))
+            {
+                if (t == root) continue;
+                string path = GetRelativePath(root, t);
+                if (!string.IsNullOrEmpty(path) && !list.Contains(path)) list.Add(path);
+            }
+
+            list.Sort((a, b) =>
+            {
+                int pa = BonePriority(a), pb = BonePriority(b);
+                return pa != pb ? pa.CompareTo(pb) : string.CompareOrdinal(a, b);
+            });
+            return list;
+        }
+
+        private static int BonePriority(string path)
+        {
+            if (path.IndexOf("Hand", StringComparison.OrdinalIgnoreCase) >= 0) return 0;
+            if (path.IndexOf("Weapon", StringComparison.OrdinalIgnoreCase) >= 0) return 1;
+            return 2;
+        }
+
+        private static string GetRelativePath(Transform root, Transform target)
+        {
+            var parts = new List<string>();
+            var cur = target;
+            while (cur != null && cur != root)
+            {
+                parts.Insert(0, cur.name);
+                cur = cur.parent;
+            }
+            return cur == root ? string.Join("/", parts.ToArray()) : "";
+        }
+
+        private HitWindowComponent GetSelectedHitWindowComponent()
+        {
+            if (skillSerializedObject == null || componentsProperty == null) return null;
+            if (selectedComponentIndex < 0 || selectedComponentIndex >= componentsProperty.arraySize) return null;
+            return componentsProperty.GetArrayElementAtIndex(selectedComponentIndex).managedReferenceValue as HitWindowComponent;
+        }
+
+        // ── SceneView：画判定盒线框 + 拖手柄改大小/偏移 ──
+
+        private void OnSceneGUI(SceneView sceneView)
+        {
+            if (!showHitBoxGizmo) return;
+
+            var hit = GetSelectedHitWindowComponent();
+            if (hit == null) return;
+
+            var anim = ResolvePreviewTarget();
+            if (anim == null) return;
+
+            // 没绑定节点时用角色根节点（和运行时行为一致）
+            Transform node = HitWindowComponent.ResolveNodeStatic(anim.transform, hit.attachNodeName);
+            if (node == null) node = anim.transform;
+
+            Vector3 nodePos = node.position;
+            Quaternion nodeRot = node.rotation;
+            Vector3 center = hit.GetHitCenter(node);          // 偏移在节点坐标系里算
+            Quaternion shapeRot = hit.GetHitRotation(node);   // 含"朝向对齐"偏移
+
+            DrawHitBoxWire(hit, center, shapeRot);
+            DrawHitBoxHandles(hit, nodePos, nodeRot, shapeRot, center);
+        }
+
+        private static void DrawHitBoxWire(HitWindowComponent hit, Vector3 center, Quaternion rot)
+        {
+            var oldColor = Handles.color;
+            var oldMatrix = Handles.matrix;
+
+            Handles.color = new Color(1f, 0.35f, 0.2f, 0.95f);
+            Handles.matrix = Matrix4x4.TRS(center, rot, Vector3.one);
+
+            switch (hit.shape)
+            {
+                case HitShape.Sphere:
+                    Handles.DrawWireDisc(Vector3.zero, Vector3.up, hit.radius);
+                    Handles.DrawWireDisc(Vector3.zero, Vector3.right, hit.radius);
+                    Handles.DrawWireDisc(Vector3.zero, Vector3.forward, hit.radius);
+                    break;
+
+                case HitShape.Capsule:
+                    float half = hit.capsuleLength * 0.5f;
+                    Vector3 back = new Vector3(0, 0, -half);
+                    Vector3 front = new Vector3(0, 0, half);
+                    Handles.DrawWireDisc(back, Vector3.forward, hit.radius);
+                    Handles.DrawWireDisc(front, Vector3.forward, hit.radius);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        float a = i * Mathf.PI * 0.5f;
+                        Vector3 o = new Vector3(Mathf.Cos(a) * hit.radius, Mathf.Sin(a) * hit.radius, 0f);
+                        Handles.DrawLine(back + o, front + o);
+                    }
+                    break;
+
+                case HitShape.Box:
+                    Handles.DrawWireCube(Vector3.zero, hit.boxHalfExtents * 2f);
+                    break;
+            }
+
+            Handles.matrix = oldMatrix;
+            Handles.color = oldColor;
+        }
+
+        private void DrawHitBoxHandles(HitWindowComponent hit, Vector3 nodePos, Quaternion nodeRot,
+                                       Quaternion shapeRot, Vector3 center)
+        {
+            // ① 半径手柄：沿判定盒「上方向」滑动，往外拖 = 变大
+            EditorGUI.BeginChangeCheck();
+            Vector3 handlePos = center + shapeRot * (Vector3.up * hit.radius);
+            Vector3 moved = Handles.Slider(handlePos, shapeRot * Vector3.up, 0.15f, Handles.SphereHandleCap, 0f);
+            if (EditorGUI.EndChangeCheck())
+                SetSelectedFloat("radius", Mathf.Max(0.01f, Vector3.Distance(center, moved)));
+
+            // ② 偏移手柄（拖中心点）
+            //    ⚠ offset 定义在【节点坐标系】里，所以换算用 nodeRot，不是判定盒朝向
+            EditorGUI.BeginChangeCheck();
+            Vector3 newCenter = Handles.PositionHandle(center, shapeRot);
+            if (EditorGUI.EndChangeCheck())
+                SetSelectedVector3("offset", Quaternion.Inverse(nodeRot) * (newCenter - nodePos));
+
+            // ③ 朝向手柄（红/绿/蓝圈）：把判定盒转到对准武器方向
+            EditorGUI.BeginChangeCheck();
+            Quaternion newShapeRot = Handles.RotationHandle(shapeRot, center);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Quaternion local = Quaternion.Inverse(nodeRot) * newShapeRot;
+                SetSelectedVector3("rotationOffset", NormalizeEuler(local.eulerAngles));
+            }
+        }
+
+        /// <summary>欧拉角夹到 -180~180，避免手柄拖出一堆 359.9 这种数</summary>
+        private static Vector3 NormalizeEuler(Vector3 e)
+        {
+            return new Vector3(Mathf.DeltaAngle(0f, e.x), Mathf.DeltaAngle(0f, e.y), Mathf.DeltaAngle(0f, e.z));
+        }
+
+        private void SetSelectedFloat(string fieldName, float value)
+        {
+            var prop = GetSelectedComponentField(fieldName);
+            if (prop == null) return;
+
+            skillSerializedObject.Update();
+            prop.floatValue = value;
+            skillSerializedObject.ApplyModifiedProperties();
+            if (skillSerializedObject.targetObject != null)
+                EditorUtility.SetDirty(skillSerializedObject.targetObject);
+            SceneView.RepaintAll();
+        }
+
+        private void SetSelectedVector3(string fieldName, Vector3 value)
+        {
+            var prop = GetSelectedComponentField(fieldName);
+            if (prop == null) return;
+
+            skillSerializedObject.Update();
+            prop.vector3Value = value;
+            skillSerializedObject.ApplyModifiedProperties();
+            if (skillSerializedObject.targetObject != null)
+                EditorUtility.SetDirty(skillSerializedObject.targetObject);
+            SceneView.RepaintAll();
+        }
+
+        private SerializedProperty GetSelectedComponentField(string fieldName)
+        {
+            if (skillSerializedObject == null || componentsProperty == null) return null;
+            if (selectedComponentIndex < 0 || selectedComponentIndex >= componentsProperty.arraySize) return null;
+            return componentsProperty.GetArrayElementAtIndex(selectedComponentIndex).FindPropertyRelative(fieldName);
         }
 
         private void ShowAddComponentMenu()
@@ -469,7 +785,7 @@ namespace SkillSystem
 
             frameEventsList.drawHeaderCallback = (Rect rect) =>
             {
-                float frameW = 45f, btnW = 22f, sliderW = 90f, playW = 28f, pad = 4f;
+                float frameW = 45f, btnW = 40f, sliderW = 90f, playW = 28f, pad = 4f;
                 float x = rect.x;
                 float idW = rect.width - (frameW * 2 + btnW + sliderW + playW + pad * 5);
                 EditorGUI.LabelField(new Rect(x + frameW, rect.y, frameW, rect.height), "帧号");
@@ -488,7 +804,7 @@ namespace SkillSystem
                 var idProp = evt.FindPropertyRelative("soundId");
                 var volumeProp = evt.FindPropertyRelative("volume");
 
-                const float frameW = 45f, btnW = 22f, sliderW = 90f, playW = 28f, pad = 4f;
+                const float frameW = 45f, btnW = 40f, sliderW = 90f, playW = 28f, pad = 4f;
                 float x = rect.x;
 
                 EditorGUI.LabelField(new Rect(x, rect.y, frameW, rect.height), "帧:");
@@ -500,9 +816,9 @@ namespace SkillSystem
                 idProp.stringValue = EditorGUI.TextField(new Rect(x, rect.y, idW, rect.height), idProp.stringValue);
                 x += idW + pad;
 
-                if (GUI.Button(new Rect(x, rect.y, btnW, rect.height), "▾"))
+                if (GUI.Button(new Rect(x, rect.y, btnW, rect.height), "选择▾"))
                 {
-                    ShowSoundIdMenu(idProp);
+                    ShowSoundIdMenu(index);
                 }
                 x += btnW + pad;
 
@@ -546,14 +862,31 @@ namespace SkillSystem
             if (componentsProperty == null || skillSerializedObject == null) return;
             if (selectedComponentIndex >= 0) return;
 
+            int index = FindFirstPlayAnimationIndex();
+            if (index < 0) return;
+            selectedComponentIndex = index;
+            RebuildFrameEventList();
+        }
+
+        /// <summary>技能里第一个「播放动画」组件的下标；没有返回 -1</summary>
+        private int FindFirstPlayAnimationIndex()
+        {
+            var all = GetPlayAnimationIndices();
+            return all.Count > 0 ? all[0] : -1;
+        }
+
+        /// <summary>技能里所有「播放动画」组件的下标</summary>
+        private List<int> GetPlayAnimationIndices()
+        {
+            var list = new List<int>();
+            if (componentsProperty == null) return list;
+
             for (int i = 0; i < componentsProperty.arraySize; i++)
             {
-                var c = componentsProperty.GetArrayElementAtIndex(i).managedReferenceValue as PlayAnimationComponent;
-                if (c == null) continue;
-                selectedComponentIndex = i;
-                RebuildFrameEventList();
-                return;
+                if (componentsProperty.GetArrayElementAtIndex(i).managedReferenceValue is PlayAnimationComponent)
+                    list.Add(i);
             }
+            return list;
         }
 
         private void DrawFrameEventTable()
@@ -572,7 +905,32 @@ namespace SkillSystem
 
             EditorGUILayout.Space(6);
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("帧事件表格（选中“播放动画”组件时显示）", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("帧事件表格", EditorStyles.boldLabel);
+
+            // 一个技能里可能有多个「播放动画」组件 → 显示当前在编哪个，并可切换
+            var animIndices = GetPlayAnimationIndices();
+            if (animIndices.Count > 1)
+            {
+                var labels = new List<string>();
+                foreach (var i in animIndices)
+                {
+                    var c = componentsProperty.GetArrayElementAtIndex(i).managedReferenceValue as PlayAnimationComponent;
+                    labels.Add($"#{i + 1} {c.stateName}");
+                }
+                int cur = Mathf.Max(0, animIndices.IndexOf(selectedComponentIndex));
+                int sel = EditorGUILayout.Popup(cur, labels.ToArray(), GUILayout.Width(160));
+                if (sel != cur)
+                {
+                    selectedComponentIndex = animIndices[sel];
+                    RebuildFrameEventList();
+                }
+            }
+            else if (animIndices.Count == 1)
+            {
+                var c = componentsProperty.GetArrayElementAtIndex(animIndices[0]).managedReferenceValue as PlayAnimationComponent;
+                EditorGUILayout.LabelField($"（挂在组件 #{animIndices[0] + 1}「{c.stateName}」上）", EditorStyles.miniLabel);
+            }
+
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("刷新音效ID", EditorStyles.miniButton, GUILayout.Width(90)))
             {
@@ -581,6 +939,13 @@ namespace SkillSystem
             EditorGUILayout.EndHorizontal();
 
             frameEventsList.DoLayoutList();
+
+            if (soundIds.Count == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "没收集到任何音效ID：先去音效编辑器把音频录进 SoundLibrary，再点上面「刷新音效ID」。",
+                    MessageType.Warning);
+            }
 
             // ── P0-9 运行时可用性检查：编辑器能试听 ≠ 游戏里能播 ──
             if (!runtimeSoundManagerFound)
@@ -620,25 +985,57 @@ namespace SkillSystem
             }
         }
 
-        private void ShowSoundIdMenu(SerializedProperty idProp)
+        /// <summary>
+        /// 音效ID选择菜单。
+        /// ⚠ 只传下标，不传 SerializedProperty —— 菜单回调是在下一次事件里才执行的，
+        ///   那时候旧的 SerializedProperty 已经失效，写进去会静默失败（"选了没反应"）。
+        /// </summary>
+        private void ShowSoundIdMenu(int eventIndex)
         {
-            GenericMenu menu = new GenericMenu();
+            var menu = new GenericMenu();
+
             if (soundIds.Count == 0)
             {
-                menu.AddDisabledItem(new GUIContent("（未找到 SoundLibrary 资产，点“刷新音效ID”）"));
+                menu.AddDisabledItem(new GUIContent("（没有可用音效ID，先点「刷新音效ID」）"));
+                menu.ShowAsContext();
+                return;
             }
+
+            string currentId = null;
+            if (frameEventsProperty != null && eventIndex >= 0 && eventIndex < frameEventsProperty.arraySize)
+            {
+                var p = frameEventsProperty.GetArrayElementAtIndex(eventIndex).FindPropertyRelative("soundId");
+                if (p != null) currentId = p.stringValue;
+            }
+
             foreach (var id in soundIds)
             {
                 string captured = id;
-                menu.AddItem(new GUIContent(captured), false, () =>
-                {
-                    idProp.stringValue = captured;
-                    idProp.serializedObject.ApplyModifiedProperties();
-                    if (idProp.serializedObject.targetObject != null)
-                        EditorUtility.SetDirty(idProp.serializedObject.targetObject);
-                });
+                menu.AddItem(new GUIContent(captured), captured == currentId, () => ApplySoundId(eventIndex, captured));
             }
             menu.ShowAsContext();
+        }
+
+        /// <summary>菜单回调真正落地的地方：先 Update，按下标重新取属性，再 Apply</summary>
+        private void ApplySoundId(int eventIndex, string soundId)
+        {
+            if (skillSerializedObject == null || frameEventsProperty == null) return;
+
+            skillSerializedObject.Update();
+            if (eventIndex < 0 || eventIndex >= frameEventsProperty.arraySize)
+            {
+                Debug.LogWarning($"[SkillEditor] 帧事件下标 {eventIndex} 已失效（列表被改过），请重新选择。");
+                return;
+            }
+
+            var p = frameEventsProperty.GetArrayElementAtIndex(eventIndex).FindPropertyRelative("soundId");
+            if (p != null) p.stringValue = soundId;
+
+            skillSerializedObject.ApplyModifiedProperties();
+            if (skillSerializedObject.targetObject != null)
+                EditorUtility.SetDirty(skillSerializedObject.targetObject);
+
+            Repaint();
         }
 
         /// <summary>从项目里所有 SoundLibrary 资产收集 soundId 与 clip（下拉数据源 + 试听）</summary>
@@ -722,7 +1119,11 @@ namespace SkillSystem
         private void DrawAnimationPreviewPanel()
         {
             EditorGUILayout.Space(6);
-            EditorGUILayout.LabelField("动画预览（选目标 → 拖动/播放 → 看帧号加事件）", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("动画预览", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "预览只是【配帧工具】：拖时间轴看第几帧、听音效响没响。\n" +
+                "它不会存进技能、也不影响游戏 —— 游戏里播哪个动画由组件里的 stateName 决定。",
+                MessageType.None);
 
             DrawPreviewTargetField();
 
@@ -1048,6 +1449,7 @@ namespace SkillSystem
             playerStatesSource = src;
             playerStates = new Dictionary<string, AnimationClip>();
             playerStateSpeeds.Clear();
+            playerBaseClips.Clear();
             if (rac == null) return;
 
             var aoc = rac as AnimatorOverrideController;
@@ -1090,8 +1492,11 @@ namespace SkillSystem
                     if (playerStates.ContainsKey(nameProp.stringValue)) continue;
 
                     var motionProp = stateSo.FindProperty("m_Motion");
-                    var clip = motionProp != null ? motionProp.objectReferenceValue as AnimationClip : null;
-                    if (aoc != null && clip != null) clip = aoc[clip];   // 换算成 Override 之后的 clip
+                    var rawClip = motionProp != null ? motionProp.objectReferenceValue as AnimationClip : null;
+
+                    // 有效 clip（把 Animator 上已有的 Override 算进去）—— 预览/算帧率用这个
+                    var clip = rawClip;
+                    if (aoc != null && clip != null) clip = aoc[clip];
 
                     // 状态自己的播放速度（帧号跑多快由它决定：currentFrame ≈ 时间 × 帧率 × Speed）
                     var speedProp = stateSo.FindProperty("m_Speed");
@@ -1099,6 +1504,7 @@ namespace SkillSystem
                     if (Mathf.Approximately(speed, 0f)) speed = 1f;
 
                     playerStates[nameProp.stringValue] = clip;
+                    playerBaseClips[nameProp.stringValue] = rawClip;   // 覆盖映射的 key 必须是这个
                     playerStateSpeeds[nameProp.stringValue] = Mathf.Abs(speed);
                 }
             }
@@ -1160,21 +1566,52 @@ namespace SkillSystem
             }
 
             float stateSpeed = playerStateSpeeds.TryGetValue(playAnim.stateName, out var sp) ? sp : 1f;
-            int maxFrame = GetMaxReachableFrame(playAnim, clip, stateSpeed);
+
+            // 方案B：baseClip 必须写进资产（运行时读不到 UnityEditor，没法现场解析动画机）
+            var rawBaseClip = playerBaseClips.TryGetValue(playAnim.stateName, out var rb) ? rb : clip;
+            SyncBaseClip(rawBaseClip);
+
+            // 有效动画：配了 overrideClip 就用它 —— 预览和游戏看到的是同一个
+            var effectiveClip = playAnim.overrideClip != null ? playAnim.overrideClip : clip;
+
+            int maxFrame = GetMaxReachableFrame(playAnim, effectiveClip, stateSpeed);
+
+            // 预览动画空着、或还停在"没覆盖前那个 clip"上，就自动同步成有效动画
+            if (previewClip == null || previewClip == clip)
+            {
+                previewClip = effectiveClip;
+                previewTime = 0f;
+                previewFrameCursor = -1;
+            }
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(
-                $"stateName 校验通过：{playAnim.stateName} → clip「{clip.name}」" +
-                $"（{clip.frameRate:0.##}fps，状态 Speed={stateSpeed:0.##}，这个技能最多走到第 {maxFrame} 帧）",
+                $"stateName 校验通过：{playAnim.stateName} → clip「{effectiveClip.name}」" +
+                $"（{SkillFrameUtil.GetFrameRate(effectiveClip):0.##}fps，Speed={stateSpeed:0.##}，最多走到第 {maxFrame} 帧）" +
+                (playAnim.overrideClip != null ? "   ★动画覆盖已启用" : ""),
                 EditorStyles.miniLabel);
             if (GUILayout.Button("用它做预览动画", EditorStyles.miniButton, GUILayout.Width(110)))
             {
-                previewClip = clip;
+                previewClip = effectiveClip;
                 previewTime = 0f;
                 previewFrameCursor = -1;
                 Repaint();
             }
             EditorGUILayout.EndHorizontal();
+
+            // 动画覆盖的坑：Humanoid 角色套非 Humanoid 动画会骨骼错乱
+            if (playAnim.overrideClip != null)
+            {
+                var targetAnimator = ResolvePreviewTarget();
+                var avatar = targetAnimator != null ? targetAnimator.avatar : null;
+                if (avatar != null && avatar.isHuman && !playAnim.overrideClip.isHumanMotion)
+                {
+                    EditorGUILayout.HelpBox(
+                        $"overrideClip「{playAnim.overrideClip.name}」不是 Humanoid 动画，而目标角色是 Humanoid Avatar ——\n" +
+                        "运行时很可能骨骼错乱或根本不动。请换一个同类型的动画。",
+                        MessageType.Error);
+                }
+            }
 
             // ★ 帧号超出技能时长 —— 游戏里永远不会触发，而且完全静默（最容易踩的坑）
             if (playAnim.frameEvents != null && playAnim.frameEvents.Count > 0)
@@ -1189,12 +1626,34 @@ namespace SkillSystem
                 {
                     EditorGUILayout.HelpBox(
                         $"这些帧事件永远不会触发：第 {string.Join("、", over.ToArray())} 帧。\n" +
-                        $"duration={playAnim.duration:0.###}s × Speed={stateSpeed:0.##} × {clip.frameRate:0.##}fps" +
+                        $"duration={playAnim.duration:0.###}s × Speed={stateSpeed:0.##} × " +
+                        $"{SkillFrameUtil.GetFrameRate(effectiveClip):0.##}fps" +
                         $" → 这个技能最多只能走到第 {maxFrame} 帧。\n" +
                         "→ 改法：把 duration 调大，或把帧号改小。游戏里它不会报任何错，只是不响。",
                         MessageType.Error);
                 }
             }
+        }
+
+        /// <summary>
+        /// 把 state 在【基础 controller】里原本绑的 clip 写进组件的 baseClip 字段。
+        /// 这是 AnimatorOverrideController 的映射 key，运行时要用，所以必须存进资产。
+        /// </summary>
+        private void SyncBaseClip(AnimationClip rawClip)
+        {
+            if (skillSerializedObject == null || componentsProperty == null) return;
+            if (selectedComponentIndex < 0 || selectedComponentIndex >= componentsProperty.arraySize) return;
+
+            var element = componentsProperty.GetArrayElementAtIndex(selectedComponentIndex);
+            var prop = element.FindPropertyRelative("baseClip");
+            if (prop == null) return;
+            if (prop.objectReferenceValue == rawClip) return;   // 已经对了，别再每帧 Apply
+
+            skillSerializedObject.Update();
+            prop.objectReferenceValue = rawClip;
+            skillSerializedObject.ApplyModifiedProperties();
+            if (skillSerializedObject.targetObject != null)
+                EditorUtility.SetDirty(skillSerializedObject.targetObject);
         }
 
         /// <summary>这个技能实际能走到的最大帧号（duration 与 clip 长度取小；Speed 会放大帧号）</summary>

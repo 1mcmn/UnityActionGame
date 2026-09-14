@@ -3,12 +3,16 @@
   "WorkspaceRootPath": "E:\\Unity\\My project\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|e:\\unity\\my project\\assets\\scripts\\skillsystem\\\u9636\u6BB53\\hitwindowcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|solutionrelative:assets\\scripts\\skillsystem\\\u9636\u6BB53\\hitwindowcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|e:\\unity\\my project\\assets\\scripts\\skillsystem\\\u9636\u6BB53\\testskilllauncher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|solutionrelative:assets\\scripts\\skillsystem\\\u9636\u6BB53\\testskilllauncher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\Unity\\My project\\Assets\\Scripts\\Player\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\Player\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|E:\\Unity\\My project\\Assets\\Scripts\\Player\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|solutionrelative:Assets\\Scripts\\Player\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|E:\\Unity\\My project\\assets\\scripts\\skillsystem\\\u9636\u6BB53\\hitwindowcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|solutionrelative:assets\\scripts\\skillsystem\\\u9636\u6BB53\\hitwindowcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,7 +22,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,15 +30,27 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "HitWindowComponent.cs",
               "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\HitWindowComponent.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\HitWindowComponent.cs",
               "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\HitWindowComponent.cs",
               "RelativeToolTip": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\HitWindowComponent.cs",
               "ViewState": "AgIAACcAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADBSURBVDhPY2AYBQwMDAwMN17c\u002BO\u002B1yv2/4ETe/9aLLf7feHH9P7L8vHNz4XxkNhxYLzb/33yo4T8DAwND06GG/16r3FEUCU7khfOR2QwMDAyMMMH3\u002BZ8ZYYK6czX/X06\u002Bzjjv3Nz/xYcLkNXDgausO8OqoDUQPeimogN8LmBC5pADsBqgO1fzPwM0wGA2Ck7kRWGHrQtBuMRzlfv/5sONkEA83PjferEF0YHIwACNRqtF5v8FJ/L\u002B91zpRno0jnAAAA95Yu0ct6ifAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-09-07T14:49:04.604Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "TestSkillLauncher.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\TestSkillLauncher.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\TestSkillLauncher.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\TestSkillLauncher.cs",
+              "RelativeToolTip": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\TestSkillLauncher.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-07T14:49:04.604Z",
+              "WhenOpened": "2026-09-14T12:55:00.567Z",
               "EditorCaption": ""
             },
             {
@@ -45,10 +61,9 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\Player\\ThirdPersonController.cs",
               "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\Player\\ThirdPersonController.cs",
               "RelativeToolTip": "Assets\\Scripts\\Player\\ThirdPersonController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-13T08:14:55.034Z",
-              "EditorCaption": ""
+              "ViewState": "AgIAADEAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADBSURBVDhPY2AYBQwMDAwMN17c\u002BO\u002B1yv2/4ETe/9aLLf7feHH9P7L8vHNz4XxkNhxYLzb/33yo4T8DAwND06GG/16r3FEUCU7khfOR2QwMDAyMMMH3\u002BZ8ZYYK6czX/X06\u002Bzjjv3Nz/xYcLkNXDgausO8OqoDUQPeimogN8LmBC5pADsBqgO1fzPwM0wGA2Ck7kRWGHrQtBuMRzlfv/5sONkEA83PjferEF0YHIwACNRqtF5v8FJ/L\u002B91zpRno0jnAAAA95Yu0ct6ifAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-09-13T08:14:55.034Z"
             }
           ]
         }
