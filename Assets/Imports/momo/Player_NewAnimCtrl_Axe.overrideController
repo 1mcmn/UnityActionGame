@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Player_NewAnimCtrl_Axe
+  m_Controller: {fileID: 9100000, guid: 8a41f16a0c6281a4296140a6ee419149, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 2f10f90c880f734479231ca4ddcd95d2, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: b500030e6e095804abaea816577ef93f, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 82f201bfbd876e14099ebeb1352b0035, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 4b03ab3105332054d961aeb09bb14007, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: d8eb02dccefb42f4cbd7c76e23f44412, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 3c81da24e700cf644b5637690fcc3543, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: ff7170eda85e97648b2105aa19446fdb, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 0cc4f2429a5c3fb419db352c8dfe5b94, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 804bf22f24d3a1445a91cfb3ce766e30, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: ecec32eff66c9264cb5cea6ae96c8bcb, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: 9f3771f59794eb74eb7b57df42532f4b, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 5913960d9bab7b84a84d5efc6ef0c9a1, type: 3}
+  - m_OriginalClip: {fileID: -203655887218126122, guid: a31d030ad76db8c41a627158f1779957, type: 3}
+    m_OverrideClip: {fileID: -203655887218126122, guid: 5fdf851a769fadb4bac1888412631550, type: 3}

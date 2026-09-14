@@ -1,0 +1,508 @@
+================================================================
+技能编辑器 修复计划书（P0 / P1 / P2）
+================================================================
+对象：Assets/Editor/Tool/编辑器/动作工具/SkillEditorWindow.cs（683 行）
+配套：Assets/Scripts/SkillSystem/阶段1~3（SkillComponent/SkillManager/6 个组件）
+依据：对现有代码走读 + 记忆库/01_决策记录.md + 毕业设计任务书.md
+说明：本文件只写"要做什么 / 为什么 / 怎么验收"，不含代码改动。
+      动手前按 AGENTS.md 第 8 条先出方案对比（优点/缺点/改动范围），
+      用户拍板后再改；每轮结束跑 compile_check.bat（先关引擎）。
+
+
+----------------------------------------------------------------
+【0】一句话结论
+----------------------------------------------------------------
+技能编辑器目前"能配数据"，但"看不见、对不上、不好改"：
+动画预览不是时间轴（是 Slider）、预览 clip 与技能无关联、采样目标
+是场景里第一个 Animator（所以动的是怪物）。P0 修观感与正确性，
+P1 修架构与一致性，P2 补功能与答辩口径。
+
+
+================================================================
+【P0】答辩前必须修（直接决定演示观感 + 数据正确性）
+================================================================
+
+P0-1 预览目标写死"场景第一个 Animator" → 动的是怪物
+----------------------------------------------------------------
+现象：拖进度条时动的是怪物/别人，不是主角。
+证据：SkillEditorWindow.cs:618
+        var animator = UnityEngine.Object.FindObjectOfType<Animator>(true);
+根因：只取场景里第一个 Animator，没有"预览目标"概念；拿到就直接采样，
+      不校验它是不是玩家。
+修法方向（二选一，待拍板）：
+  A. 窗口加 PreviewTarget 字段（ObjectField<GameObject>），默认自动找
+     tag=Player 的对象，顶部显示"正在预览：<名字>"；
+  B. 由当前技能的 caster / SkillManager 所属对象推导。
+验收：窗口顶部显示预览目标名字；拖进度条只有主角动，怪物不动；
+      找不到目标时给明确提示（而不是 Warning 后静默失效）。
+
+P0-2 预览与技能完全脱钩，可以随便拖任意 AnimationClip
+----------------------------------------------------------------
+现象：任意 clip 都能拖进来，预览的帧和游戏里播的不是同一个动画。
+证据：SkillEditorWindow.cs:588
+        previewClip = (AnimationClip)EditorGUILayout.ObjectField(
+            "预览动画", previewClip, typeof(AnimationClip), false);
+      SkillEditorWindow.cs:592  HelpBox 自认"仅辅助配帧，不保存进技能"。
+根因：previewClip 是窗口临时字段，与选中 PlayAnimationComponent 的
+      stateName 无联动；运行时是按 stateName 走 CrossFade 播状态。
+修法方向（二选一，待拍板）：
+  A. 选中"播放动画"组件时，从它的 stateName 反查 controller 里该状态的
+     motion(clip)，自动作为默认预览 clip；
+  B. 保留手动指定，但显示"当前预览 clip != stateName 对应 clip"的警告。
+验收：改 stateName 后预览 clip 自动跟着变（A）；
+      或至少红字提示二者不一致（B）。
+
+P0-3 动画预览是 Slider（进度条），不是时间轴
+----------------------------------------------------------------
+现象：没有标尺/播放头/事件标记/播放键/逐帧，长动画整条压扁到窗口宽。
+证据：SkillEditorWindow.cs:596-604
+        previewTime = EditorGUILayout.Slider("时间轴", previewTime, 0f, previewClip.length);
+        int currentFrame = Mathf.FloorToInt(previewTime * 30f);   // 写死 30fps
+目标形态（时间轴最小规格）：
+  1) 横向时间标尺（秒+帧刻度），随窗口宽度缩放/可横向滚动；
+  2) 播放头可拖动，拖动吸附到整数帧；
+  3) 时间轴上把 frameEvents 画成标记（方块/竖线），悬停显示帧号+音效ID；
+  4) 播放 / 暂停 / 循环 / 逐帧步进（左/右箭头一帧）；
+  5) 帧号用 clip.frameRate 计算，不再写死 30fps；
+  6) 与"在此帧添加事件"联动：点标记可选中/删除对应事件。
+验收：播放时能看到播放头走；配好的事件在时间轴上可见；
+      逐帧按钮精确挪一帧；帧号与 clip.frameRate 一致。
+
+P0-4 预览后不恢复姿态、AnimationMode 进出不配对
+----------------------------------------------------------------
+现象：预览完场景里的对象停在半路姿势；长时间开窗口场景停在动画模式。
+证据：SkillEditorWindow.cs:624-625  StartAnimationMode + SampleAnimationClip
+      SkillEditorWindow.cs:76       只在 OnDisable 才 StopAnimationMode
+修法方向：采样前后保存/恢复目标姿态；用 try/finally 保证
+        StartAnimationMode / StopAnimationMode 配对；窗口关闭即退出预览。
+验收：预览结束对象回到原姿态；Scene 面板不残留动画预览模式。
+
+P0-5 帧率写死 30fps，且忽略 clip.frameRate
+----------------------------------------------------------------
+现象：非 30fps 的 clip，显示帧号与配帧全部错位。
+证据：SkillEditorWindow.cs:604   Mathf.FloorToInt(previewTime * 30f)
+      PlayAnimationComponent.cs:82   const float frameRate = 30f;
+根因：同一常量在两个文件各写一份，都是硬编码。
+修法方向：抽共享工具（如 SkillFrameUtil.FrameOf(clip, t)），统一改用
+        clip.frameRate；帧事件数据语义在界面标注（帧号是"某 clip 的帧"）。
+验收：拖 24fps 的 clip，总帧数 = length*24，事件触发帧一致。
+
+P0-6 帧事件的 volume / loop 是"假控件"
+----------------------------------------------------------------
+现象：编辑器里能调音量/循环，运行时完全不生效。
+证据：PlayAnimationComponent.cs:8-9   注释自认"暂未生效"
+      PlayAnimationComponent.cs:111-112  只调 SoundManager.Play(id,pos)
+      SkillEditorWindow.cs:473        界面照样给音量滑条
+修法方向（二选一，待拍板）：
+  A. 给 SoundManager 加带 volume/loop 的重载，真正接上；
+  B. 本期不做，界面把这两个控件禁用并标"预留（未实现）"。
+验收：改音量 → 游戏里音量跟着变（A）；或控件灰掉且有说明（B）。
+
+P0-7 "在此帧添加事件"链路容易静默失败
+----------------------------------------------------------------
+现象：没选中"播放动画"组件时点按钮只打 warning；添加后不填 ID、
+      不校验帧号、不排序，时间轴上也看不到。
+证据：SkillEditorWindow.cs:633-647  AddFrameEventAtFrame
+      SkillEditorWindow.cs:637      frameEventsProperty==null 直接退出
+修法方向：按钮按选中状态置灰/提示；添加时自动填默认 soundId、夹取到
+        [0, 总帧]、按帧号排序，并立刻反映到时间轴。
+验收：连续加 3 个事件，帧号自动升序、时间轴可见、都在合法范围。
+
+P0-8 现有技能资产里已经有坏数据（空槽）
+----------------------------------------------------------------
+现象：NewSkill.asset 的 components 是 2 个空槽（rid:-2），窗口显示"空槽位"。
+证据：Assets/SkillSystem/Skills/NewSkill.asset:17-19
+修法：清掉空元素；窗口对 null 元素提供"移除空槽"按钮，而不是只显示文字。
+验收：库里的技能打开无"空槽位"；删空槽后能保存。
+
+
+================================================================
+【P1】架构与一致性（答辩可能追问"分层/设计模式"）
+================================================================
+
+P1-1 单文件 683 行，职责全糊在一起
+----------------------------------------------------------------
+证据：SkillEditorWindow.cs 一个类同时做：库管理 / 技能列表 / 技能详情 /
+      组件深度绘制 / 高度计算 / 帧事件表格 / 音效收集试听 / 动画预览 / 保存。
+修法方向（拆分，命名待定）：
+  - SkillEditorWindow.cs              壳：菜单/布局/顶部工具条
+  - SkillEditorState.cs               选中项、滚动、预览目标、预览时间
+  - SkillComponentDrawerRegistry.cs   组件注册 + 绘制分发
+  - AnimationTimelineGUI.cs           时间轴控件（P0-3 的载体）
+  - SkillEditorAudio.cs               soundId 收集 + 编辑器内试听
+验收：单文件 < 300 行；新增组件/面板不需要改窗口主类。
+
+P1-2 组件类型硬编码字典，违反开闭原则
+----------------------------------------------------------------
+证据：SkillEditorWindow.cs:47-54  ComponentTypes 手写 5 项
+修法方向：反射扫描 SkillComponent 子类；或用特性
+        [SkillComponentMenu("播放动画", order=1)] 注册；"添加组件"菜单
+        由注册表生成。
+验收：只新增一个组件类（不改窗口）就能出现在"添加组件"菜单里。
+
+P1-3 硬编码路径，可能编辑到"游戏没在用的库"
+----------------------------------------------------------------
+证据：SkillEditorWindow.cs:12   LibraryPath = "Assets/SkillSystem/SkillLibrary.asset"
+      SkillEditorWindow.cs:216  "Assets/SkillSystem/Skills"
+风险：编辑器改的库 != SkillManager.library 挂的库（历史上 GameSoundData
+      空库就是这么踩的）。
+修法方向：优先取场景里 SkillManager.library；取不到再回退固定路径；
+        顶部显示"正在编辑的库 / 游戏挂载的库是否一致"。
+验收：窗口能提示"游戏挂载的库 = 你正在编辑的库"。
+
+P1-4 编辑器状态不持久化，一编译就丢
+----------------------------------------------------------------
+证据：selectedSkillIndex / selectedComponentIndex / previewClip / previewTime
+      都是普通字段（SkillEditorWindow.cs:26,31,43,44）。
+修法方向：用 SessionState（跨域重载）或 [SerializeField]（跨会话）保存；
+        重开窗口尽量恢复上次选中技能。
+验收：改完脚本触发域重载后，窗口仍停在上次选中的技能/组件。
+
+P1-5 两套保存路径 + 每帧标脏
+----------------------------------------------------------------
+证据：SkillEditorWindow.cs:287-293  每次 OnGUI 都 ApplyModifiedProperties+SetDirty
+      SkillEditorWindow.cs:653-678  又有"保存所有修改"按钮
+修法方向：统一为"显式保存"（或全自动保存）二选一，去掉默认路径里的
+        每帧标脏。
+验收：不点保存时资产不落盘；点保存后落盘；Ctrl+Z 行为符合预期。
+
+P1-6 撤销（Undo）没专门处理
+----------------------------------------------------------------
+证据：全文件无 Undo.RecordObject / Undo.RegisterCompleteObjectUndo；
+      组件用 managedReferenceValue + arraySize 增删（:378-386, :400-412）。
+风险：内嵌多态对象的增删撤销不可靠（真机验证）。
+修法方向：关键改动前 Undo.RecordObject(target,"xxx")；增删组件用 Undo 分组。
+验收：加/删组件、改伤害后 Ctrl+Z 能逐级退回且数据正确。
+
+P1-7 同一份 frameEvents 有两套绘制路径
+----------------------------------------------------------------
+证据：SkillEditorWindow.cs:338/:361  跳过 frameEvents；
+      SkillEditorWindow.cs:419-501  又用独立表格画它。
+风险：窗口与原生 Inspector 两处可改，容易打架/覆盖。
+修法方向：组件内也画 frameEvents（单一来源），或做成 CustomPropertyDrawer
+        让两处一致。
+验收：窗口和原生 Inspector 看到的 frameEvents 完全一致、可互改。
+
+P1-8 高度计算重复 + managedReference 遍历写法易错
+----------------------------------------------------------------
+证据：SkillEditorWindow.cs:310-344（draw）与 :346-365（height）各算一遍；
+      :328-329  element.Copy() + GetEndProperty()
+风险：字段多时元素重叠 / 高度错位。
+修法方向：高度与绘制共用同一套枚举；或改用
+        PropertyField(rect, prop, true)+GetPropertyHeight；真机跑长组件验证。
+验收：一个含 8+ 字段的组件在列表里不重叠、不截断。
+
+P1-9 组件之间的隐式顺序契约没有校验
+----------------------------------------------------------------
+证据：PlayAnimationComponent.cs:20、HitWindowComponent.cs:16 注释要求
+      "必须排在 HitWindow / InvincibleWindow 之前"。
+风险：顺序拖错就整体失效，且没有任何提示。
+修法方向：保存/运行时校验顺序，不满足时窗口红字提示或一键纠正。
+验收：故意把 HitWindow 拖到 PlayAnimation 前面，窗口给出明确警告。
+
+P1-10 SkillLibrary 线性查找 + 无 ID 唯一性校验
+----------------------------------------------------------------
+证据：SkillLibrary.cs:13-23  foreach 线性扫描；重复 skillId 静默取第一个。
+修法方向：内部建 Dictionary（惰性重建）；OnValidate + 保存前查重；
+        ID 为空/重复时窗口红字。
+验收：重复 ID 保存时被拦下或提示；查找 O(1)。
+
+P1-11 HitWindow 直接依赖 Enemy 类型
+----------------------------------------------------------------
+证据：HitWindowComponent.cs:125  target.GetComponent<Enemy>()
+风险：非 Enemy 目标（可破坏物/机关）直接失效；组件与具体敌人类型耦合。
+修法方向：改用接口/事件（如 IDamageable），或加"目标过滤"配置。
+验收：用非 Enemy 的测试目标也能走通判定+伤害流程。
+
+P1-12 顿帧并发冲突（跨系统）
+----------------------------------------------------------------
+证据：SkillManager.cs:91-102 与 PlayerCombat.TriggerHitStop 各自"存旧值->恢复"。
+风险：两个顿帧重叠时，先结束的会把后者提前恢复。
+修法方向：统一到一个 HitStop 服务，用引用计数或"最后一次结束才恢复"。
+验收：连续触发两次顿帧，时间缩放按预期叠加恢复，不抽帧。
+
+
+================================================================
+【P2】功能补全 / 答辩口径（有时间再做）
+================================================================
+
+P2-1 技能列表没有搜索/分类
+    现状：只有 ReorderableList 平铺（SkillEditorWindow.cs:130-212）。
+    期望：搜索框（按 ID/名称）、按前缀分组、显示引用计数。
+    验收：20 个技能时 2 秒内定位目标。
+
+P2-2 缺"复制/粘贴组件""克隆技能"
+    现状：只能一个个加。
+    期望：右键复制组件 -> 粘贴到别的技能；克隆技能并自动改 ID。
+    验收：3 步内建出"上捞斩 2 号"。
+
+P2-3 孤儿资产无提示
+    现状：删除技能只删库引用（SkillEditorWindow.cs:199-211）；
+          Assets/SkillSystem/Components/ 还留着 v2 遗留组件资产。
+    期望：列出"没被任何库引用的 SkillConfig / 组件资产"，可一键清理。
+
+P2-4 没有运行时技能调试面板
+    期望：显示运行中的技能 ID、激活组件、当前帧、生命周期状态
+          （对应计划书阶段 6 的"当前技能状态/激活组件"）。
+    价值：答辩演示"技能正在跑"的最直观证据。
+
+P2-5 连携/过渡功能未做（阶段 7）
+    现状：SkillConfig 没有 transitions 字段。
+    期望：List<SkillTransition>{ conditionTrigger, nextSkillId } +
+          运行时技能级参数容器 + 结束检查过渡。
+    验收：编辑器配"上捞斩->回旋斩"，游戏里按两次自动连携。
+
+P2-6 与任务书数据口径不一致（必须拍板）
+    现状：任务书要求技能编辑器编辑 ComboData（段数/伤害/clip 映射/音效前缀）
+          （毕业设计任务书.md:52-55、答辩冲刺计划.md:39,56-61）；
+          但 ComboData.cs 至今没有 clip/音效前缀字段，当前实现编辑的是
+          SkillLibrary/SkillConfig 组件体系；音效前缀仍硬编码 atk0{seg}_swing。
+    待拍板：
+      A. 扩展 ComboData（加 clip/音效前缀字段），让老连击也数据驱动；
+         技能编辑器做成"两个页签"（连击数据 / 技能组件）；
+      B. 明确口径为"两代实现"：ComboData = 旧战斗数据，SkillConfig = 新技能系统，
+         论文如实写演进过程。
+    验收：论文/PPT 里两个数据资产的关系能一句话讲清。
+
+P2-7 "全局组件库/模板"降级说明要同步
+    证据：记忆库/01_决策记录.md:26（v3 决策反转：组件改内嵌 SerializeReference）。
+    待办：论文附录 A/B 与计划书表述同步为"内嵌实现 + 全局库为未来展望"；
+          清理 v2 遗留 Components/*.asset。
+    验收：文档与代码一致，无"已删功能还写在计划里"。
+
+P2-8 空技能/无组件/无 ID 等边界
+    期望：保存时校验 skillId 非空；空技能给出提示；播放无组件技能不报错。
+    验收：故意保存空 ID，被拦下并提示。
+
+
+================================================================
+【附】不做什么（沿用计划书附录 B，防范围蔓延）
+================================================================
+- 不重写 PlayerCombat / EnemyAI（共存迁移，老代码是回退保险）
+- 不做图编辑器 / 虚拟节点状态机（纯论文设计部分）
+- 不引入 Odin / NaughtyAttributes / Behavior Designer / Animancer 等
+- 不做道具系统 / 机关系统
+- 不改 .meta、不动 Assets/Imports、不改引擎版本
+
+
+================================================================
+【附】建议动手顺序
+================================================================
+第一轮（P0）：P0-1 -> P0-3 -> P0-2 -> P0-4 -> P0-5 -> P0-6 -> P0-7 -> P0-8
+              （先让预览"动对人、看得见帧、碰得到事件"）
+第二轮（P1）：P1-5/P1-6（保存与撤销）-> P1-1/P1-2（拆文件与注册制）
+              -> P1-9/P1-10/P1-3（校验与一致性）-> P1-4/P1-7/P1-8/P1-11/P1-12
+第三轮（P2）：P2-6/P2-7（口径，随论文写）-> P2-1/P2-2/P2-3/P2-8 -> P2-4/P2-5
+说明：每轮开始前按 AGENTS.md 第 8 条先出方案对比（优点/缺点/改动范围），
+      用户拍板后再改；每轮结束跑 compile_check.bat（先关引擎）。
+================================================================
+
+
+================================================================
+【第一步 · 已实施记录 + 验证清单】（日期见文件修改时间）
+================================================================
+改动范围（4 个文件，未动任何资产 / .meta）：
+  1. 新增 Assets/Scripts/SkillSystem/阶段1/SkillFrameUtil.cs
+     帧<->时间换算唯一出处；帧率取 clip.frameRate，兜底 30fps。
+     TimeToFrame 仍是 floor，30fps 素材行为与原实现完全一致。
+  2. Assets/Scripts/SkillSystem/阶段3/PlayAnimationComponent.cs
+     AnimationState 增加 clip 字段；帧号改用 SkillFrameUtil（不再写死 30fps）。
+  3. Assets/Editor/.../动作工具/SkillEditorWindow.cs
+     - P0-1 预览目标：新增「预览目标」字段；留空则自动找 tag=Player 的
+       Animator，并在面板上显示"正在预览：<名字>（手动指定 / 自动：tag=Player /
+       自动：退化为场景第一个 Animator）"，退化时给黄色警告。
+     - P0-4 姿态还原：AnimationMode 进出配对（只关自己开的），
+       关窗口 / 清空 clip / 点「还原姿态 / 退出预览」/ 进 Play 模式都会还原。
+     - P0-3(第一步) 简易播放控制：Play/Pause、上一帧/下一帧、回到头/尾、
+       循环开关；拖动 Slider 会吸附到整数帧；由 EditorApplication.update 驱动。
+     - P0-5 帧号/总帧数改用 clip.frameRate，界面显示"帧率：xx fps"。
+     - P0-7 加事件：帧号夹取到 [0,总帧]、默认音效ID继承上一条、按帧号升序
+       排序（MoveArrayElement，不丢字段）、SetDirty、时间轴跳到该帧；
+       没选中「播放动画」组件时弹窗提示（不再静默 warning）。
+     - P0-2(B) 一致性提示：显示"运行时按 stateName=xxx 播状态，这里预览的是
+       clip「yyy」"。
+  4. Game.csproj 补 <Compile Include> SkillsFrameUtil（否则 compile_check 会
+     CS0246；Unity 下次打开也会自己重生成）。
+
+--------------------------------------------------------------------------------
+验证步骤（按顺序做）
+--------------------------------------------------------------------------------
+【0】编译
+  1) 先关掉团结引擎（编辑器开着会锁编译输出文件 —— 见 02_踩坑记录）
+  2) 双击 run 目录下的 compile_check.bat
+  3) 期望：Assembly-CSharp 与 Assembly-CSharp-Editor 都"0 错误"
+     （MSB3277 程序集统一警告可忽略）
+  4) 若报 CS0246 找不到 SkillFrameUtil：Unity 还没刷新 csproj，
+     开一次引擎等它编译完再跑；或检查 Game.csproj 里那行 Include 是否还在。
+
+【1】打开窗口
+  Tools/技能编辑器。若提示自动创建了 SkillLibrary.asset，属正常（原有逻辑）。
+
+【2】准备场景（关键）
+  - 场景里要有主角 momo 1，且它的根物体 tag = Player（AGENTS.md 第 4 条）。
+  - 主角如果是隐藏/未激活的（开始界面逻辑会 SetActive(false)），
+    先在 Hierarchy 里把它激活，否则姿态变化看不见。
+
+【3】P0-1 预览目标 —— 期望"动的是主角不是怪物"
+  a) 场景里同时有主角和怪物 → 窗口「预览目标」留空 → 看下面那行
+     "正在预览：xxx" 应该是主角名字，来源显示"自动：tag=Player"。
+  b) 拖一个 AnimationClip 到「预览动画」→ 拖「时间轴」Slider
+     → 只有主角动，怪物不动。
+  c) 故意把主角 tag 改成 Untagged → 点「自动找主角」→ 应该显示黄色警告
+     "没找到 tag=Player 的对象…"，且"正在预览"显示的是别人。
+  d) 把怪物的 Animator 拖到「预览目标」→ 拖时间轴 → 这时动的才是怪物
+     （证明"能选目标"这件事生效了）。
+
+【4】P0-4 姿态还原 —— 期望"预览完不留残影"
+  a) 拖时间轴到动画中间 → 主角定格在中间姿势。
+  b) 点「还原姿态 / 退出预览」→ 主角立刻回到预览前的姿势。
+  c) 再拖一次时间轴，然后直接关掉窗口 → 同样还原。
+  d) Scene 面板左上角不应残留"动画预览模式"的标记。
+  e) 进 Play 模式 → 预览自动停掉，且不会影响游戏里的动画。
+
+【5】P0-5 帧率 —— 期望"总帧数按 clip 自己的帧率算"
+  a) 在 Project 里选中一个 AnimationClip，Inspector 里看它的 Frame Rate
+     （比如 24 或 60）。
+  b) 窗口「预览动画」拖这个 clip → 看"帧率"显示的是不是同一个数，
+     "总帧数"应该 ≈ clip.length × 帧率（不再是写死 30）。
+  c) 顺带：场景里没人的时候不应该有 30fps 的错位。
+
+【6】P0-3(第一步) 播放控制
+  a) 点「▶ 播放」→ 主角连续动，「当前帧」数字连续增长。
+  b) 点「⏸ 暂停」→ 停住不动，帧号不变。
+  c) 「◀|」「|▶」每点一次帧号正好 ±1（这是"帧级配帧"的基础）。
+  d) 勾上「循环」→ 播到尾自动回到 0；不勾 → 播到尾停住。
+  e) 「⏮」「⏭」分别跳到第 0 帧和最后一帧。
+
+【7】P0-7 添加帧事件
+  a) 先在左栏选一个技能，在组件列表里点中一个「播放动画」组件
+     （必须选中，否则下面的帧事件表格不显示）。
+  b) 拖时间轴到某帧（比如第 10 帧）→ 点「在第 10 帧添加事件」
+     → 下方表格出现一行 frame=10；时间轴跳到第 10 帧。
+  c) 连续在乱序的帧上加（比如先 20 再 5）→ 表格应自动按帧号升序排。
+  d) 点「▾」选一个音效 ID → 点「▶」能试听。
+  e) 反向验证：不选中任何组件 → 点「添加事件」→ 应弹窗提示，而不是静默
+     只打一行 Console warning。
+
+【8】运行时一致性（最重要的一条，串起编辑器和游戏）
+  a) 编辑器里给「播放动画」组件配：stateName = 技能用的那个状态，
+     frameEvents 加一条"第 10 帧 → atk01_swing"（用 ▾ 从库里选）。
+  b) 点底部「保存所有修改」。
+  c) 进游戏，按 J 释放技能（或 TestSkillLauncher 里配的触发键）。
+  d) 期望：动画播到第 10 帧附近响音效（Console 有 [Skill] 日志）。
+     若音效提前/延后：确认预览 clip 就是 stateName 对应的那个动画
+     （第二步 P0-2 会自动解析，本步只给了提示文字）。
+
+--------------------------------------------------------------------------------
+本步"没做"的（留给第二步，别当成 bug）
+--------------------------------------------------------------------------------
+- 时间轴仍是 Slider，没有标尺 / 播放头 / 事件标记 / 缩放 / 悬停（P0-3 的可视部分）
+- 「预览动画」还是要手动拖，不会自动从 stateName 解析（P0-2 的 A 方案）
+- volume / loop 仍是假控件（P0-6，等你拍板 A 还是 B）
+- P1 / P2 全部未动
+================================================================
+
+
+================================================================
+【排查记录】"游戏里第 10 帧没响音效"（用户实测反馈）
+================================================================
+现象：
+  - 编辑器帧事件表格里点 ▶ 能听到声音，帧号 = 10
+  - 编辑器里播放/拖时间轴听不到声音（← 这是第一步没做的功能，已补）
+  - 进游戏按 J 释放技能，第 10 帧附近没有音效
+
+【已核实的事实】（读磁盘文件得到的，非猜测）
+ 1. 技能资产 Assets/SkillSystem/Skills/NewSkill 2.asset（skillId=player_uppercut）
+    的真实配置：
+      PlayAnimationComponent: stateName="AT1", crossFade=0.1, duration=0.5
+      frameEvents: [ { frame: 10, soundId: "k", volume: 0, loop: 0 } ]
+    ⚠ volume = 0（Unity 展开数组元素时字段落成 0，不走 C# 的 =1f 初始值）。
+      现在运行时忽略 volume 所以不影响；但 P0-6 一旦接上就立刻静音 → 已在
+      AddFrameEventAtFrame 里把新建事件显式补成 1。
+ 2. 音效库的真实内容（和记忆库写的"38 条"不符！）：
+      Assets/Scripts/Audio/PlayerSounds.asset  → 只有 1 条：soundID = "k"
+      Assets/Scripts/Audio/GameSoundData.asset → 只有 1 条：soundID = "k"
+    真正的 wav 素材（Assets/Imports/FOOT：安比攻击1~5 / 攻击受击音1~7 /
+    脚步声1~8 / 收脚音1~2）根本没有被任何 SoundLibrary 收进去。
+    → 运行时的 SoundManager 字典最多只可能有 {"k"} 这一条；
+      任何 atk01_swing / hit_01 之类 ID 都会走
+      PlayInternal 的 Debug.LogWarning("[SoundManager] 未找到音效: xxx") 然后静默返回。
+ 3. SkillLibrary.asset 里只有 1 条技能引用（guid f52ff2f623741764f9c105253b240f27），
+    而磁盘上有 3 个 SkillConfig 资产（NewSkill / NewSkill 1 / NewSkill 2）。
+    → 如果被引用的不是 NewSkill 2，SkillManager.PlaySkill("player_uppercut")
+      会走 "查找不到组件" 分支直接 return —— 技能压根不执行，
+      自然既没有动画也没有音效。
+ 4. 触发器：TestSkillLauncher.cs 在 J 键调
+    SkillManager.Instance.PlaySkill("player_uppercut", transform, targetPos)，
+    caster = 挂它的那个对象（必须是挂了 Animator 的玩家本体）。
+
+【30 秒定位法】（按顺序看 Console）
+  a) 找 "[SoundManager] 字典构建完成，共 N 条音效"
+     N = 1 → 运行时只有 "k" 一条，音效库是空的（对应事实 2）
+  b) 按 J，看有没有
+     "[Skill] player_uppercut: Released → Running"
+     没有 → 技能没跑（对应事实 3：不在库里 / SkillManager.library 没挂）
+  c) 看有没有 "[SoundManager] 未找到音效: xxx"
+     有 → ID 在运行时字典里不存在（编辑器能试听只是因为它扫的是全项目库）
+  d) 勾上 SoundManager 的 _logPlayback，看有没有 "[SoundManager] ▶ k"
+     有 → 音效其实播了，那是音量/听感问题，不是逻辑问题
+
+【本次新增的两个改善】（都属于第一步范围）
+ A. 时间轴试听：播放/拖动时播放头向前跨过事件帧就试听（规则与运行时一致），
+    面板上加了「试听帧事件」开关。→ 不用进游戏就能验"第几帧响"。
+ B. P0-9 运行时音效ID校验：技能编辑器现在会去读**场景里 SoundManager 挂的库**，
+    把"游戏里查不到"的 soundId 列成红色报错并告诉你运行时到底挂了哪些库。
+    → 从此不会再出现"编辑器里能试听、游戏里静默无声"这种信息差。
+
+【还没修的（要你拍板）】
+ - 音效库只有 "k" 这一条是**数据问题**，不是代码问题：
+   要么把 38 条重新录进 PlayerSounds（用音效条目管理器批量导入），
+   要么把已有 wav 批量补进库。这是"改资产"，按规矩等你决定。
+ - SkillLibrary 里到底该有几条技能、要不要把 player_uppercut 加进去，同理等你确认。
+================================================================
+
+
+================================================================
+【第二轮改动】按 J 没反应 + "为什么要先点组件才能加音效"
+================================================================
+一、UX：帧事件必须选中「播放动画」组件 → 已消除
+   - 打开技能时若一个组件都没选，自动选中第一个「播放动画」组件
+     （EnsureFrameEventTarget；用户明确选了别的组件就不抢）
+   - 没有「播放动画」组件时，原来是一整块表格消失（用户不知道发生了什么），
+     现在给明确提示："帧事件挂在「播放动画」组件上，请先选中它 / 先添加一个"
+   - 「在第 N 帧添加事件」按钮：条件不满足时置灰 + 黄字说明，
+     不再弹模态框
+   原因说明（写进论文/答辩口径）：
+     帧事件的数据结构是 SoundFrameEvent，它挂在 PlayAnimationComponent 里
+     （因为"第 10 帧"这个坐标系来自某个具体动画）。所以从数据模型上，
+     没有动画组件就没有"帧"可言 —— 这是设计使然，但界面必须讲清楚。
+
+二、新增 stateName 校验（"按 J 动作不变"的头号嫌疑）
+   游戏里 PlayAnimationComponent.OnStart 调的是
+     animator.CrossFadeInFixedTime(stateName, crossFade)
+   若 stateName 在动画机里不存在 → CrossFade 失败 → Animator 保持原动画，
+   表现就是"按了键动作没变"。编辑器现在会：
+   - 读玩家 Animator 的 controller（SerializedObject 走 m_AnimatorLayers →
+     m_StateMachine → m_ChildStates/m_ChildStateMachines 递归，
+     支持 AnimatorOverrideController 换算覆盖后的 clip）
+   - stateName 不存在 → 红色报错 + 列出所有可用状态名
+   - stateName 存在但 m_Motion 为空 → 黄色警告（状态没绑动画也一样没动作）
+   - 校验通过 → 显示 "→ clip「xxx」" + 「用它做预览动画」按钮
+     （这一步顺带把 P0-2 的 A 方案做掉了：预览 clip 自动跟 stateName 对齐）
+
+   踩坑备注：**不能用 UnityEditor.Animations.AnimatorController** ——
+   Assembly-CSharp-Editor.csproj 的引用清单里没有 UnityEditor.AnimationModule
+   （只有 CoreModule / SceneViewModule / UIModule 等），直接用会 CS0246。
+   所以改成 SerializedObject 读序列化字段，零额外引用。
+
+三、按 J 没反应的排查分支（两条路，看 Console 就能分开）
+   分支 A：stateName 写错 / 状态没绑动画
+     → 编辑器红色报错；游戏里 Console 会有 "State 'xxx' does not exist"
+   分支 B：技能压根没执行
+     → 游戏 Console 打 [SkillManager]"查找不到组件"（library.Get 返回 null）
+       或 "没有查找到library"（SkillManager.library 没挂）
+       或什么日志都没有（SkillManager / TestSkillLauncher 不在场景里）
+     → 注意：磁盘上 SkillLibrary.asset 只引用了 1 个技能，但有 3 个 SkillConfig
+       资产（NewSkill / NewSkill 1 / NewSkill 2），player_uppercut 在
+       NewSkill 2 里 —— 要用窗口左栏确认列表里到底有没有它。
+================================================================
