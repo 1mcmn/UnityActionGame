@@ -1,10 +1,10 @@
 {
-  "unity_port": -1,
-  "stream_port": 50137,
+  "unity_port": 49425,
+  "stream_port": 49827,
   "created_date": "2026-06-21T07:30:09.4211115Z",
   "project_path": "E:/Unity/My project/Assets",
   "reloading": false,
-  "reason": "unity_quit",
-  "seq": 69634,
-  "last_heartbeat": "2026-08-23T17:24:13.210Z"
+  "reason": "ready",
+  "seq": 17493,
+  "last_heartbeat": "2026-09-14T10:59:35.393Z"
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 namespace SkillSystem { 
     public class SkillContext 
@@ -9,6 +10,7 @@ namespace SkillSystem {
         public string skillId;
         public float startTime;
         public Action onFinish;
+        public Dictionary<string, object> runtimeData = new Dictionary<string, object>();
         public SkillContext(Transform caster,Vector3 targetPos,
         Transform target=null,string skillId="")
         {

@@ -9,8 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88712430f428e534ba6a63c5b43c3e28, type: 3}
-  m_Name: newSkillLibrary
+  m_Script: {fileID: 11500000, guid: 7dc995e1c2adbef49833d506335189bd, type: 3}
+  m_Name: PlayAnimationComponent_4e8dfd
   m_EditorClassIdentifier: 
-  skills:
-  - {fileID: 11400000, guid: 390f3456542c0c748895fd8627a1c87c, type: 2}
+  stateName: Attack
+  crossFade: 0.1
+  duration: 1
+  frameEvents: []

@@ -507,16 +507,31 @@ public class ThirdPersonController : MonoBehaviour
         if (Input.GetMouseButton(1)) { ChangeState(PlayerState.Block); return; }
         }
 
-        // 步骤 1：缓冲连击输入（按下即缓存，窗口内自动接上）
+        // 步骤 1：接受连击输入（动画驱动窗口：窗口外点击直接忽视，防抽搐）
         if (ConsumeBufferedAttack())
         {
-            combat.BufferCombo();
+            bool animatorStillAttacking = !animCtrl.IsInState("Idle");
+            bool inWindow = combat.IsAttacking && animCtrl.GetNormalizedTime01() >= combat.ComboWindowStart;
+            bool inGraceTail = !combat.IsAttacking && animatorStillAttacking; // 计时结束但动画还在攻击状态
+            if (inWindow || inGraceTail)
+                combat.BufferCombo();
+            // 其余情况：窗口外点击直接丢弃
         }
 
-        // 步骤 2：窗口内消费缓冲的连击
-        if (combat.ConsumeBufferedCombo())
+        // 步骤 2：消费缓冲
+        if (combat.HasBufferedCombo)
         {
-            animCtrl.TriggerNextAttack();
+            if (animCtrl.IsInState("Idle"))
+            {
+                // 动画已回 Idle：视为"窗口外的新起手"，重打第一段（不会打断当前段 → 无抽搐）
+                combat.StartAttack();
+                animCtrl.TriggerAttack();
+                FaceNearestEnemy();
+            }
+            else if (combat.ConsumeBufferedCombo())
+            {
+                animCtrl.TriggerNextAttack();
+            }
             StartCoroutine(DelayedHitDetection(_attackHitDelay));
             return;
         }
@@ -527,6 +542,11 @@ public class ThirdPersonController : MonoBehaviour
             combat.DecrementTimer(Time.deltaTime);
             return;
         }
+
+        // 步骤 3.5：残响窗口（段结束后保持攻击状态一小段时间，等慢点击续招）
+        combat.DecrementGraceTimer(Time.deltaTime);
+        if (combat.IsInGrace)
+            return;
 
         // 步骤 4：强制退出保险
         if (combat.IncrementForceExitTimer(Time.deltaTime))

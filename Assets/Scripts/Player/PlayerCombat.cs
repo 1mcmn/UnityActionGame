@@ -22,7 +22,9 @@ public class PlayerCombat : MonoBehaviour
     // 数据资产优先，未赋值时回退到 Inspector 内联字段
     private float AttackDuration => comboData != null ? comboData.attackDuration : attackDuration;
     private float AttackRadius   => comboData != null ? comboData.attackRadius   : attackRadius;
-    private float ComboWindowPercent => comboData != null ? comboData.comboWindowPercent : 0.55f;
+    private float ComboWindowPercent => comboData != null ? comboData.comboWindowPercent : 0.35f;
+    private float ComboGraceWindow  => comboData != null ? comboData.comboGraceWindow  : 0.15f;
+    private int   MaxComboStep      => comboData != null ? comboData.maxComboStep      : 4;
     private float[] ComboDamages => comboData != null ? comboData.comboDamages  : _comboDamages;
 
     [Header("弹反")]
@@ -48,6 +50,7 @@ public class PlayerCombat : MonoBehaviour
     public float MaxHealth => maxHealth;
 
     private float attackTimer;
+    private float graceTimer;          // 残响窗口计时（段结束后慢点击续招）
     private float forceExitTimer;
     private int   _comboStep;          // 当前是第几段连击（0=普攻1, 1=普攻2, ...）
     private bool  _comboWindowOpen;    // 攻击全程（含收刀）允许连击输入
@@ -62,26 +65,39 @@ public class PlayerCombat : MonoBehaviour
     /// <summary>攻击进度（0=刚起手，1=收招结束）。供状态机判断取消窗口。</summary>
     public float AttackProgress01 => AttackDuration > 0.0001f ? 1f - attackTimer / AttackDuration : 1f;
 
-    /// <summary>连击输入缓冲：前摇阶段按下也缓存，窗口内自动接下一段。</summary>
+    /// <summary>连击输入缓冲：由状态机在"动画窗口内"调用（窗口外点击会被状态机直接丢弃）。</summary>
     public void BufferCombo() => _comboBuffered = true;
+
+    /// <summary>是否有待消费的连击缓冲（供状态机判断"新起手还是续段"）。</summary>
+    public bool HasBufferedCombo => _comboBuffered;
+
+    /// <summary>连击窗口起点（动画进度 0~1），由状态机读取动画归一化时间比较。</summary>
+    public float ComboWindowStart => 1f - ComboWindowPercent;
 
     /// <summary>窗口内且有缓冲输入时执行连击，推进到下一段。成功返回 true。</summary>
     public bool ConsumeBufferedCombo()
     {
         if (!_comboBuffered) return false;
 
-        // 攻击已结束，丢弃缓冲
+        // 攻击已结束：残响窗口内仍可推进；超时丢弃
         if (attackTimer <= 0f)
+        {
+            if (graceTimer <= 0f)
+            {
+                _comboBuffered = false;
+                return false;
+            }
+        }
+
+        // 段数钳制：已到最后一段不再推进（防数组越界/触发器空转）
+        if (_comboStep >= MaxComboStep)
         {
             _comboBuffered = false;
             return false;
         }
 
-        // 仍在攻击前摇阶段，保持缓冲等待窗口
-        if (attackTimer > AttackDuration * ComboWindowPercent)
-            return false;
-
         attackTimer = AttackDuration;
+        graceTimer = 0f;
         _comboStep++;
         _comboBuffered = false;
         PlaySwingSfx();
@@ -99,6 +115,7 @@ public class PlayerCombat : MonoBehaviour
     {
         attackTimer = AttackDuration;
         forceExitTimer = 0f;
+        graceTimer = 0f;
         _comboStep = 0;
         _comboBuffered = false;
         PlaySwingSfx();
@@ -108,6 +125,9 @@ public class PlayerCombat : MonoBehaviour
     public void DecrementTimer(float deltaTime)
     {
         attackTimer -= deltaTime;
+        // 计时归零时打开残响窗口（慢点击续招的兜底）
+        if (attackTimer <= 0f && graceTimer <= 0f)
+            graceTimer = ComboGraceWindow;
     }
 
     // ─── 强制退出保险 ──────────────────────────────
@@ -127,11 +147,22 @@ public class PlayerCombat : MonoBehaviour
         forceExitTimer = 0f;
     }
 
+    /// <summary>段计时结束后的残响窗口是否仍在（残响内保持攻击状态，等慢点击）。</summary>
+    public bool IsInGrace => attackTimer <= 0f && graceTimer > 0f;
+
+    /// <summary>逐帧递减残响窗口计时（仅在 IsAttacking 为 false 时调用）。</summary>
+    public void DecrementGraceTimer(float deltaTime)
+    {
+        if (attackTimer <= 0f)
+            graceTimer = Mathf.Max(0f, graceTimer - deltaTime);
+    }
+
     /// <summary>攻击状态退出时清零所有计时器。</summary>
     public void ResetAllTimers()
     {
         attackTimer = 0f;
         forceExitTimer = 0f;
+        graceTimer = 0f;
         _comboStep = 0;
         _comboBuffered = false;
     }

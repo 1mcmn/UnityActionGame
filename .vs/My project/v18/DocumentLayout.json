@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "E:\\Unity\\My project\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|e:\\unity\\my project\\assets\\scripts\\skillsystem\\\u9636\u6BB52\\skillmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|solutionrelative:assets\\scripts\\skillsystem\\\u9636\u6BB52\\skillmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|e:\\unity\\my project\\assets\\scripts\\skillsystem\\\u9636\u6BB53\\hitwindowcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|solutionrelative:assets\\scripts\\skillsystem\\\u9636\u6BB53\\hitwindowcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|e:\\unity\\my project\\assets\\scripts\\skillsystem\\\u9636\u6BB52\\skillinstance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|solutionrelative:assets\\scripts\\skillsystem\\\u9636\u6BB52\\skillinstance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|E:\\Unity\\My project\\Assets\\Scripts\\Player\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A9695FC6-0747-5210-B0AB-E73852BE515A}|Game.csproj|solutionrelative:Assets\\Scripts\\Player\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -27,28 +27,27 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "SkillManager.cs",
-              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB52\\SkillManager.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB52\\SkillManager.cs",
-              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB52\\SkillManager.cs",
-              "RelativeToolTip": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB52\\SkillManager.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAEAAAAAAAAAA==",
+              "Title": "HitWindowComponent.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\HitWindowComponent.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\HitWindowComponent.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\HitWindowComponent.cs",
+              "RelativeToolTip": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB53\\HitWindowComponent.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-23T17:13:56.281Z",
+              "WhenOpened": "2026-09-07T14:49:04.604Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "SkillInstance.cs",
-              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB52\\SkillInstance.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB52\\SkillInstance.cs",
-              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\SkillSystem\\\u9636\u6BB52\\SkillInstance.cs",
-              "RelativeToolTip": "Assets\\Scripts\\SkillSystem\\\u9636\u6BB52\\SkillInstance.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAQwCkAAAAFAAAAAAAAAA==",
+              "Title": "ThirdPersonController.cs",
+              "DocumentMoniker": "E:\\Unity\\My project\\Assets\\Scripts\\Player\\ThirdPersonController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Player\\ThirdPersonController.cs",
+              "ToolTip": "E:\\Unity\\My project\\Assets\\Scripts\\Player\\ThirdPersonController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Player\\ThirdPersonController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-23T17:02:05.663Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-13T08:14:55.034Z"
             }
           ]
         }

@@ -9,7 +9,7 @@ namespace SkillSystem
     {
         public string skillId;
         public string skillName;
-        public List<SkillComponent> components = new List<SkillComponent>();
+        [SerializeReference] public List<SkillComponent> components = new List<SkillComponent>();
     }
 }
 

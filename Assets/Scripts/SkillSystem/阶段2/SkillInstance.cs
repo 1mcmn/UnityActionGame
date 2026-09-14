@@ -4,9 +4,9 @@ namespace SkillSystem
 {
     public enum SkillLifecycleState
     {
-        none,
+        None,
         Released,
-        Runing,
+        Running,
         Ended,
         Interrupted
     }
@@ -26,14 +26,14 @@ namespace SkillSystem
         }
         public void RequestFinish()
         {
-            if (state == SkillLifecycleState.Released)
+            if (state == SkillLifecycleState.Running)
             {
                 state = SkillLifecycleState.Ended;
             }
         }
         public void RequestInterrupt()
         {
-            if (state == SkillLifecycleState.Runing)
+            if (state == SkillLifecycleState.Running)
             {
 
                 state = SkillLifecycleState.Interrupted;

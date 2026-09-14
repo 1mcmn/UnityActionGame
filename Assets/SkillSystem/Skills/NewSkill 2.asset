@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38e596458de2d114496c23ecd7810abc, type: 3}
+  m_Name: NewSkill 2
+  m_EditorClassIdentifier: 
+  skillId: player_uppercut
+  skillName: "\u4E0A\u635E\u65A9"
+  components:
+  - rid: 1631846285180934
+  - rid: 1631846285180935
+  - rid: 1631846285180936
+  - rid: 1631846285180937
+  references:
+    version: 2
+    RefIds:
+    - rid: 1631846285180934
+      type: {class: PlayAnimationComponent, ns: SkillSystem, asm: Game}
+      data:
+        displayName: 
+        stateName: AT1
+        crossFade: 0.1
+        duration: 0.5
+        frameEvents:
+        - frame: 27
+          soundId: k
+          volume: 1
+          loop: 0
+        - frame: 50
+          soundId: k
+          volume: 1
+          loop: 0
+    - rid: 1631846285180935
+      type: {class: HitWindowComponent, ns: SkillSystem, asm: Game}
+      data:
+        displayName: 
+        startFrame: 5
+        endFrame: 15
+        shape: 0
+        radius: 1.5
+        capsuleLength: 1.2
+        boxHalfExtents: {x: 0.6, y: 0.4, z: 0.6}
+        offset: {x: 0, y: 0.5, z: 0.5}
+        targetMask:
+          serializedVersion: 2
+          m_Bits: 128
+        damageComponent:
+          displayName: 
+          damage: 10
+        feedbackComponent:
+          displayName: 
+          soundIdPrefix: hit_
+          hitStopDuration: 0.05
+          hitStopTimeScale: 0.1
+          knockbackDistance: 0.5
+    - rid: 1631846285180936
+      type: {class: DamageComponent, ns: SkillSystem, asm: Game}
+      data:
+        displayName: 
+        damage: 10
+    - rid: 1631846285180937
+      type: {class: HitFeedbackComponent, ns: SkillSystem, asm: Game}
+      data:
+        displayName: 
+        soundIdPrefix: hit_
+        hitStopDuration: 0.05
+        hitStopTimeScale: 0.1
+        knockbackDistance: 0.5

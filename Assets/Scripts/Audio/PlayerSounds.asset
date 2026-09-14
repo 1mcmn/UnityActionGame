@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayerSounds
   m_EditorClassIdentifier: 
   sounds:
-  - soundID: 
-    clip: {fileID: 0}
+  - soundID: k
+    clip: {fileID: 8300000, guid: 7a80760bd0025b542929ccb43775ffde, type: 3}
   - soundID: 
     clip: {fileID: 0}

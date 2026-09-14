@@ -24,7 +24,20 @@ public class PlayerAnimController : MonoBehaviour
     public void SetLastMoveSpeed(float value) { if (animator != null) animator.SetFloat("LastMoveSpeed", value); }
     public void SetRun(bool value) { if (animator != null) animator.SetBool("Run", value); }
 
-    public void TriggerAttack() { if (animator != null) animator.SetTrigger("Attack"); }
+    public void TriggerAttack()
+    {
+        if (animator == null) return;
+        animator.ResetTrigger("NextAttack");   // 清上一套连招残留的 NextAttack，防第一段被跳过（A2）
+        animator.SetTrigger("Attack");
+    }
+
+    /// <summary>当前动画进度 0~1（循环取余）。供连击窗口判定（A2）。</summary>
+    public float GetNormalizedTime01(int layer = 0)
+    {
+        if (animator == null) return 0f;
+        float t = animator.GetCurrentAnimatorStateInfo(layer).normalizedTime;
+        return t % 1f;
+    }
     public void TriggerNextAttack() { if (animator != null) { animator.ResetTrigger("NextAttack"); animator.SetTrigger("NextAttack"); } }
     public void TriggerDodge() { if (animator != null) animator.SetTrigger("Dodge"); }
     public void TriggerParry() { if (animator != null) animator.SetTrigger("Parry"); }
