@@ -506,6 +506,7 @@ namespace SkillSystem
             { "overrideClip",  new GUIContent("overrideClip（★动画覆盖·可选）", "填了 = 运行时用 AnimatorOverrideController 把这个状态的动画换成它（策划换动画不用碰 Animator）。留空 = 播状态原本的动画。") },
             { "baseClip",      new GUIContent("baseClip（原动画·自动填充）", "stateName 状态在【基础 controller】里原本绑的 clip。由编辑器自动解析写入，运行时用它做覆盖映射 —— 请不要手改。") },
             { "crossFade",     new GUIContent("crossFade（过渡秒数）", "0.1 = 平滑过渡；0.02~0.05 = 瞬间切换（振刀/受击这类）") },
+            { "returnStateName", new GUIContent("returnStateName（结束后回到的状态·可留空）", "技能结束或被打断时，建议角色回到哪个动画状态（如 Idle）。留空 = 由角色按当前移动速度自己决定，推荐留空。") },
             { "duration",      new GUIContent("duration（★技能总时长·秒）", "整个技能跑这么久就结束。帧事件的帧号必须落在 duration×帧率 之内，否则永远不会触发。填 0 = 不自动结束，一直播到被 InterruptSkill / 切技能打断（架势、循环类用）。") },
             { "startFrame",    new GUIContent("startFrame（判定起始帧）", "判定窗口的起始帧号") },
             { "endFrame",      new GUIContent("endFrame（判定结束帧）", "判定窗口的结束帧号") },

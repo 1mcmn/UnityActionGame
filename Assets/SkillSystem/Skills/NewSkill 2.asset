@@ -28,7 +28,7 @@ MonoBehaviour:
         displayName: 
         stateName: AT1
         crossFade: 0.1
-        duration: 2
+        duration: 1
         frameEvents:
         - frame: 8
           soundId: k
@@ -36,11 +36,12 @@ MonoBehaviour:
           loop: 0
         overrideClip: {fileID: 0}
         baseClip: {fileID: -203655887218126122, guid: 6c97b7f8a0b35124b9c485b0f42c565c, type: 3}
+        returnStateName: idle
     - rid: 1631846285180935
       type: {class: HitWindowComponent, ns: SkillSystem, asm: Game}
       data:
         displayName: 
-        startFrame: 5
+        startFrame: 8
         endFrame: 15
         attachNodeName: Armature/Root/J_Bip_C_Hips/J_Bip_C_Spine/J_Bip_C_Chest/J_Bip_C_UpperChest/J_Bip_R_Shoulder/J_Bip_R_UpperArm/J_Bip_R_LowerArm/J_Bip_R_Hand/Weapon_Socket
         shape: 1
@@ -69,7 +70,7 @@ MonoBehaviour:
       type: {class: DamageComponent, ns: SkillSystem, asm: Game}
       data:
         displayName: 
-        damage: 10
+        damage: 60
     - rid: 1631846285180937
       type: {class: HitFeedbackComponent, ns: SkillSystem, asm: Game}
       data:
@@ -78,6 +79,6 @@ MonoBehaviour:
         blockSoundIdPrefix: block_
         parrySoundIdPrefix: parry_
         hitStopDuration: 0.05
-        hitStopTimeScale: 0.1
+        hitStopTimeScale: 0.102
         blockedHitStopDuration: 0.08
         knockbackDistance: 0.5

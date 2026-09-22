@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <defs>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4472C4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="540" fill="#FFFFFF"/>
+  <rect x="0" y="0" width="960" height="8" fill="#1F3864"/>
+
+  <text x="60" y="96" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#1F3864">怎么做：技术方案</text>
+  <rect x="60" y="120" width="840" height="3" fill="#D9E2F3"/>
+
+  <rect x="60" y="150" width="840" height="70" rx="8" fill="#1F3864"/>
+  <text x="88" y="193" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">编辑器层</text>
+  <text x="880" y="193" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#D9E2F3" text-anchor="end">EditorWindow · SerializedObject · ReorderableList</text>
+  <line x1="480" y1="224" x2="480" y2="234" stroke="#4472C4" stroke-width="3" marker-end="url(#ar3)"/>
+
+  <rect x="60" y="238" width="840" height="70" rx="8" fill="#4472C4"/>
+  <text x="88" y="281" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">数据层</text>
+  <text x="880" y="281" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#D9E2F3" text-anchor="end">ScriptableObject · [SerializeReference] 组件内嵌</text>
+  <line x1="480" y1="312" x2="480" y2="322" stroke="#4472C4" stroke-width="3" marker-end="url(#ar3)"/>
+
+  <rect x="60" y="326" width="840" height="70" rx="8" fill="#8FAADC"/>
+  <text x="88" y="369" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">运行时层</text>
+  <text x="880" y="369" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#FFFFFF" text-anchor="end">状态机 · Animator + Root Motion · Rigidbody 判定</text>
+
+  <rect x="63" y="424" width="134" height="30" rx="15" fill="#F2F4F8"/>
+  <text x="130" y="444" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#1F3864" text-anchor="middle">Unity 2022.3</text>
+  <rect x="203" y="424" width="134" height="30" rx="15" fill="#F2F4F8"/>
+  <text x="270" y="444" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#1F3864" text-anchor="middle">C#</text>
+  <rect x="343" y="424" width="134" height="30" rx="15" fill="#F2F4F8"/>
+  <text x="410" y="444" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#1F3864" text-anchor="middle">URP</text>
+  <rect x="483" y="424" width="134" height="30" rx="15" fill="#F2F4F8"/>
+  <text x="550" y="444" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#1F3864" text-anchor="middle">Animator</text>
+  <rect x="623" y="424" width="134" height="30" rx="15" fill="#F2F4F8"/>
+  <text x="690" y="444" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#1F3864" text-anchor="middle">Rigidbody</text>
+  <rect x="763" y="424" width="134" height="30" rx="15" fill="#F2F4F8"/>
+  <text x="830" y="444" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#1F3864" text-anchor="middle">Editor 扩展</text>
+
+  <rect x="60" y="506" width="840" height="1" fill="#D9E2F3"/>
+  <text x="60" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959">基于Unity的动作游戏与编辑器工具的设计与实现</text>
+  <text x="900" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959" text-anchor="end">5</text>
+</svg>

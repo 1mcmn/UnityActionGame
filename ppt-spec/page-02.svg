@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect x="0" y="0" width="960" height="540" fill="#FFFFFF"/>
+  <rect x="0" y="0" width="960" height="8" fill="#1F3864"/>
+
+  <text x="60" y="96" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#1F3864">具体内容 · 总览</text>
+  <rect x="60" y="120" width="840" height="3" fill="#D9E2F3"/>
+
+  <rect x="60" y="146" width="270" height="86" rx="8" fill="#F2F4F8"/>
+  <text x="80" y="178" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#595959">架构形态</text>
+  <text x="80" y="210" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#1F3864">单机客户端 · 无前后端</text>
+
+  <rect x="345" y="146" width="270" height="86" rx="8" fill="#F2F4F8"/>
+  <text x="365" y="178" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#595959">使用者</text>
+  <text x="365" y="210" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#1F3864">2 类：开发者 · 玩家</text>
+
+  <rect x="630" y="146" width="270" height="86" rx="8" fill="#F2F4F8"/>
+  <text x="650" y="178" font-family="Microsoft YaHei, sans-serif" font-size="13" fill="#595959">功能模块</text>
+  <text x="650" y="210" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="bold" fill="#1F3864">6 个</text>
+
+  <rect x="60" y="272" width="270" height="86" rx="10" fill="#D9E2F3"/>
+  <text x="195" y="323" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#1F3864" text-anchor="middle">玩家控制</text>
+  <rect x="345" y="272" width="270" height="86" rx="10" fill="#D9E2F3"/>
+  <text x="480" y="323" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#1F3864" text-anchor="middle">战斗系统</text>
+  <rect x="630" y="272" width="270" height="86" rx="10" fill="#D9E2F3"/>
+  <text x="765" y="323" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#1F3864" text-anchor="middle">敌人 AI</text>
+
+  <rect x="60" y="372" width="270" height="86" rx="10" fill="#D9E2F3"/>
+  <text x="195" y="423" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#1F3864" text-anchor="middle">技能系统</text>
+  <rect x="345" y="372" width="270" height="86" rx="10" fill="#D9E2F3"/>
+  <text x="480" y="423" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#1F3864" text-anchor="middle">数据层</text>
+  <rect x="630" y="372" width="270" height="86" rx="10" fill="#D9E2F3"/>
+  <text x="765" y="423" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#1F3864" text-anchor="middle">编辑器工具链</text>
+
+  <rect x="60" y="506" width="840" height="1" fill="#D9E2F3"/>
+  <text x="60" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959">基于Unity的动作游戏与编辑器工具的设计与实现</text>
+  <text x="900" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959" text-anchor="end">2</text>
+</svg>

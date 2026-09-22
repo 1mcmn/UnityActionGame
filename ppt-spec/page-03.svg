@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4472C4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="540" fill="#FFFFFF"/>
+  <rect x="0" y="0" width="960" height="8" fill="#1F3864"/>
+
+  <text x="60" y="96" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#1F3864">模块功能（一）：玩家 · 战斗 · 敌人</text>
+  <rect x="60" y="120" width="840" height="3" fill="#D9E2F3"/>
+
+  <rect x="60" y="176" width="148" height="76" rx="10" fill="#D9E2F3"/>
+  <text x="134" y="219" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864" text-anchor="middle">输入映射</text>
+  <line x1="212" y1="214" x2="228" y2="214" stroke="#4472C4" stroke-width="3" marker-end="url(#ar)"/>
+
+  <rect x="232" y="176" width="148" height="76" rx="10" fill="#D9E2F3"/>
+  <text x="306" y="219" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864" text-anchor="middle">十态状态机</text>
+  <line x1="384" y1="214" x2="400" y2="214" stroke="#4472C4" stroke-width="3" marker-end="url(#ar)"/>
+
+  <rect x="404" y="176" width="148" height="76" rx="10" fill="#D9E2F3"/>
+  <text x="478" y="219" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864" text-anchor="middle">连招·弹反·格挡</text>
+  <line x1="556" y1="214" x2="572" y2="214" stroke="#4472C4" stroke-width="3" marker-end="url(#ar)"/>
+
+  <rect x="576" y="176" width="148" height="76" rx="10" fill="#D9E2F3"/>
+  <text x="650" y="219" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864" text-anchor="middle">判定窗口</text>
+  <line x1="728" y1="214" x2="744" y2="214" stroke="#4472C4" stroke-width="3" marker-end="url(#ar)"/>
+
+  <rect x="748" y="176" width="148" height="76" rx="10" fill="#D9E2F3"/>
+  <text x="822" y="219" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864" text-anchor="middle">顿帧·音效·数字</text>
+
+  <rect x="60" y="316" width="400" height="76" rx="10" fill="#F2F4F8"/>
+  <rect x="60" y="316" width="6" height="76" fill="#4472C4"/>
+  <text x="86" y="348" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#595959">敌人 AI</text>
+  <text x="86" y="374" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="bold" fill="#1F3864">13 态状态机 · 韧性与受击</text>
+
+  <rect x="500" y="316" width="396" height="76" rx="10" fill="#F2F4F8"/>
+  <rect x="500" y="316" width="6" height="76" fill="#4472C4"/>
+  <text x="526" y="348" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#595959">数据层</text>
+  <text x="526" y="374" font-family="Microsoft YaHei, sans-serif" font-size="16" font-weight="bold" fill="#1F3864">血量 · 韧性 · 无敌帧 · 事件</text>
+
+  <text x="60" y="446" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#595959">玩家与敌人共用同一套战斗结算与反馈层</text>
+
+  <rect x="60" y="506" width="840" height="1" fill="#D9E2F3"/>
+  <text x="60" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959">基于Unity的动作游戏与编辑器工具的设计与实现</text>
+  <text x="900" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959" text-anchor="end">3</text>
+</svg>

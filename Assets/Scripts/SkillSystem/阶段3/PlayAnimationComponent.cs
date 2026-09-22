@@ -40,6 +40,12 @@ namespace SkillSystem
                  "由技能编辑器自动解析后写进资产，运行时用它做覆盖映射。一般不用手改。")]
         public AnimationClip baseClip;
 
+        [Header("结束后交还动画控制权")]
+        [Tooltip("技能结束或被打断时，建议角色回到哪个动画状态（如 Idle / Locomotion）。\n" +
+                 "留空 = 由角色自己决定（推荐）—— 角色会按当前移动速度选择待机或移动混合树。\n" +
+                 "不填也能正常工作，填了则强制回到这个状态名。")]
+        public string returnStateName = "";
+
         // 运行时状态（每个技能实例独立，存 ctx 而不存组件本身——组件资产被多技能共享，不能有实例字段）
         private class AnimationState
         {
@@ -214,7 +220,15 @@ namespace SkillSystem
             }
         }
 
-        public override void OnEnd(SkillContext ctx) { }
-        public override void OnInterrupt(SkillContext ctx) { }
+        // 技能结束 / 被打断：把动画控制权交还给角色（由角色决定回待机还是移动）
+        public override void OnEnd(SkillContext ctx)
+        {
+            SkillEvents.RequestAnimationReturn(ctx != null ? ctx.caster : null, returnStateName);
+        }
+
+        public override void OnInterrupt(SkillContext ctx)
+        {
+            SkillEvents.RequestAnimationReturn(ctx != null ? ctx.caster : null, returnStateName);
+        }
     }
 }

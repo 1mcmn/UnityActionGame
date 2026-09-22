@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect x="0" y="0" width="960" height="540" fill="#FFFFFF"/>
+  <rect x="0" y="0" width="960" height="8" fill="#1F3864"/>
+
+  <text x="60" y="96" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#1F3864">项目背景</text>
+  <rect x="60" y="120" width="840" height="3" fill="#D9E2F3"/>
+
+  <rect x="60" y="188" width="6" height="164" fill="#4472C4"/>
+  <text x="92" y="224" font-family="Microsoft YaHei, sans-serif" font-size="22" fill="#333333">做一个「数据驱动 + 可视化编辑器工具链」的第三人称动作战斗系统，</text>
+  <text x="92" y="268" font-family="Microsoft YaHei, sans-serif" font-size="22" fill="#333333">面向独立开发者与小型团队，解决战斗内容生产依赖代码、手感难以量化、</text>
+  <text x="92" y="312" font-family="Microsoft YaHei, sans-serif" font-size="22" fill="#333333">判定与表现不同步的问题。</text>
+
+  <rect x="60" y="506" width="840" height="1" fill="#D9E2F3"/>
+  <text x="60" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959">基于Unity的动作游戏与编辑器工具的设计与实现</text>
+  <text x="900" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959" text-anchor="end">1</text>
+</svg>

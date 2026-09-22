@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <defs>
+    <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4472C4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="540" fill="#FFFFFF"/>
+  <rect x="0" y="0" width="960" height="8" fill="#1F3864"/>
+
+  <text x="60" y="96" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#1F3864">模块功能（二）：技能系统 · 编辑器工具链</text>
+  <rect x="60" y="120" width="840" height="3" fill="#D9E2F3"/>
+
+  <text x="60" y="168" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#1F3864">技能 = ID + 组件</text>
+
+  <rect x="60" y="188" width="340" height="44" rx="8" fill="#D9E2F3"/>
+  <text x="80" y="216" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864">播放动画</text>
+  <rect x="60" y="240" width="340" height="44" rx="8" fill="#D9E2F3"/>
+  <text x="80" y="268" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864">判定窗口</text>
+  <rect x="60" y="292" width="340" height="44" rx="8" fill="#D9E2F3"/>
+  <text x="80" y="320" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864">伤害</text>
+  <rect x="60" y="344" width="340" height="44" rx="8" fill="#D9E2F3"/>
+  <text x="80" y="372" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864">命中反馈</text>
+  <rect x="60" y="396" width="340" height="44" rx="8" fill="#D9E2F3"/>
+  <text x="80" y="424" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#1F3864">无敌帧</text>
+
+  <text x="450" y="168" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="bold" fill="#1F3864">工作闭环</text>
+
+  <rect x="450" y="188" width="450" height="54" rx="8" fill="#F2F4F8"/>
+  <rect x="450" y="188" width="6" height="54" fill="#4472C4"/>
+  <text x="476" y="221" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#1F3864">编辑器配置（组件 · 参数 · 帧事件）</text>
+  <line x1="675" y1="246" x2="675" y2="262" stroke="#4472C4" stroke-width="3" marker-end="url(#ar2)"/>
+
+  <rect x="450" y="266" width="450" height="54" rx="8" fill="#F2F4F8"/>
+  <rect x="450" y="266" width="6" height="54" fill="#4472C4"/>
+  <text x="476" y="299" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#1F3864">ScriptableObject 资产（唯一数据源）</text>
+  <line x1="675" y1="324" x2="675" y2="340" stroke="#4472C4" stroke-width="3" marker-end="url(#ar2)"/>
+
+  <rect x="450" y="344" width="450" height="54" rx="8" fill="#F2F4F8"/>
+  <rect x="450" y="344" width="6" height="54" fill="#4472C4"/>
+  <text x="476" y="377" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#1F3864">运行时 SkillManager 按 ID 释放</text>
+  <line x1="675" y1="402" x2="675" y2="418" stroke="#4472C4" stroke-width="3" marker-end="url(#ar2)"/>
+
+  <rect x="450" y="422" width="450" height="46" rx="8" fill="#D9E2F3"/>
+  <text x="476" y="451" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#1F3864">游戏表现：动画 · 伤害 · 音效</text>
+
+  <text x="60" y="470" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#595959">两个工具：技能编辑器 · 音效管理器 —— 只写资产，不改代码</text>
+
+  <rect x="60" y="506" width="840" height="1" fill="#D9E2F3"/>
+  <text x="60" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959">基于Unity的动作游戏与编辑器工具的设计与实现</text>
+  <text x="900" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959" text-anchor="end">4</text>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <defs>
+    <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#C00000"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="540" fill="#FFFFFF"/>
+  <rect x="0" y="0" width="960" height="8" fill="#1F3864"/>
+
+  <text x="60" y="96" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#1F3864">难点与对策</text>
+  <rect x="60" y="120" width="840" height="3" fill="#D9E2F3"/>
+
+  <rect x="60" y="160" width="300" height="76" rx="8" fill="#FBE9E7"/>
+  <rect x="60" y="160" width="6" height="76" fill="#C00000"/>
+  <text x="84" y="205" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#C00000">判定与表现不同步</text>
+  <line x1="372" y1="198" x2="396" y2="198" stroke="#C00000" stroke-width="3" marker-end="url(#ar4)"/>
+  <rect x="410" y="160" width="490" height="76" rx="8" fill="#E8F5E9"/>
+  <rect x="410" y="160" width="6" height="76" fill="#2E7D32"/>
+  <text x="434" y="205" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#2E7D32">帧级判定窗口：判定@帧 · 音效@帧</text>
+
+  <rect x="60" y="256" width="300" height="76" rx="8" fill="#FBE9E7"/>
+  <rect x="60" y="256" width="6" height="76" fill="#C00000"/>
+  <text x="84" y="301" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#C00000">打断后状态残留</text>
+  <line x1="372" y1="294" x2="396" y2="294" stroke="#C00000" stroke-width="3" marker-end="url(#ar4)"/>
+  <rect x="410" y="256" width="490" height="76" rx="8" fill="#E8F5E9"/>
+  <rect x="410" y="256" width="6" height="76" fill="#2E7D32"/>
+  <text x="434" y="301" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#2E7D32">四态生命周期 + 打断统一清理</text>
+
+  <rect x="60" y="352" width="300" height="76" rx="8" fill="#FBE9E7"/>
+  <rect x="60" y="352" width="6" height="76" fill="#C00000"/>
+  <text x="84" y="397" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#C00000">手感靠感觉调</text>
+  <line x1="372" y1="390" x2="396" y2="390" stroke="#C00000" stroke-width="3" marker-end="url(#ar4)"/>
+  <rect x="410" y="352" width="490" height="76" rx="8" fill="#E8F5E9"/>
+  <rect x="410" y="352" width="6" height="76" fill="#2E7D32"/>
+  <text x="434" y="397" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#2E7D32">参数数据化：时长 · 窗口 · 无敌帧进资产</text>
+
+  <text x="60" y="470" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#595959">三项难点已定位：①③ 已实现，② 修复中</text>
+
+  <rect x="60" y="506" width="840" height="1" fill="#D9E2F3"/>
+  <text x="60" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959">基于Unity的动作游戏与编辑器工具的设计与实现</text>
+  <text x="900" y="528" font-family="Microsoft YaHei, sans-serif" font-size="12" fill="#595959" text-anchor="end">6</text>
+</svg>

@@ -31,6 +31,24 @@ public class WeaponAttachment : MonoBehaviour
     private GameObject _weapon;
 
     public GameObject Weapon => _weapon;
+    public GameObject WeaponPrefab => weaponPrefab;
+
+    /// <summary>
+    /// 推算"武器将被放到的世界矩阵"（按 Inspector 里的挂点与微调参数）。
+    /// 编辑器里没有实例化武器时，用它来预览判定胶囊的位置和朝向。
+    /// </summary>
+    public Matrix4x4 GetWeaponWorldMatrix()
+    {
+        Transform parent = overrideBone;
+        if (parent == null)
+        {
+            var anim = _animator != null ? _animator : GetComponentInChildren<Animator>();
+            if (anim != null && anim.isHuman) parent = anim.GetBoneTransform(handBone);
+        }
+        if (parent == null) parent = transform;
+        return parent.localToWorldMatrix *
+               Matrix4x4.TRS(localPosition, Quaternion.Euler(localEulerAngles), localScale);
+    }
 
     private void Awake()
     {

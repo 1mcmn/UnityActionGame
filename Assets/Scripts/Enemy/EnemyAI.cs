@@ -21,6 +21,13 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float _attackRadius = 2.5f;  // 可攻击距离
     [SerializeField] private float _attack06Radius = 2f;  // 06 嚎叫有效距离
 
+    [Header("命中判定（按碰撞体体积，而不是中心点）")]
+    [Tooltip("勾选：伤害判定按【两个碰撞体的表面距离】计算 —— 贴到才算命中（推荐）。\n" +
+             "取消：回到旧的【中心点距离】判定（_attackRadius × 0.8）。")]
+    [SerializeField] private bool _useSurfaceHitCheck = true;
+    [Tooltip("允许的表面间隙（米）。0 = 必须真正接触；0.2 = 允许贴近 20cm 仍算命中。建议 0.15~0.25。")]
+    [SerializeField] private float _hitSurfaceTolerance = 0.2f;
+
     [Header("移动速度")]
     [SerializeField] private float _walkSpeed     = 1.5f;
     [SerializeField] private float _runSpeed      = 4.5f;
@@ -49,6 +56,8 @@ public class EnemyAI : MonoBehaviour
     private Animator _animator;
     private Rigidbody _rigidbody;
     private Transform _player;
+    private Collider _selfCollider;    // 自己的碰撞体（算表面距离用）
+    private Collider _playerCollider;  // 玩家的碰撞体（算表面距离用）
 
     // ==================== 状态机 ====================
 
@@ -435,11 +444,60 @@ public class EnemyAI : MonoBehaviour
 
         if (_player == null) yield break;
 
-        float dist = DistanceToPlayer();
-        if (dist > _attackRadius * 0.8f) yield break; // 太远打不到（收紧判定，避免范围过大）
+        // 命中判定：默认按两个碰撞体的【表面距离】算，贴到才算命中（避免"隔空挨打"）；
+        // 取消 _useSurfaceHitCheck 则回到旧的中心点距离判定。
+        if (!IsPlayerInHitReach()) yield break;
 
         var pc = _player.GetComponent<ThirdPersonController>();
         pc?.TryTakeDamage(_attackDamage, transform.position);
+    }
+
+    /// <summary>
+    /// 玩家是否进入"能被这一下打到"的范围。
+    /// 表面距离 = 中心点距离 − 敌人水平半径 − 玩家水平半径；
+    /// 小于等于容差即认为贴到了（半径取自两个碰撞体的包围盒）。
+    /// </summary>
+    private bool IsPlayerInHitReach()
+    {
+        if (_player == null) return false;
+
+        if (!_useSurfaceHitCheck)
+            return DistanceToPlayer() <= _attackRadius * 0.8f;   // 旧行为（中心点距离）
+
+        return SurfaceDistanceToPlayer() <= _hitSurfaceTolerance;
+    }
+
+    /// <summary>两个碰撞体之间的表面间隙（米）。负数 = 已经重叠。</summary>
+    private float SurfaceDistanceToPlayer()
+    {
+        float dist = DistanceToPlayer();
+        if (dist >= float.MaxValue) return float.MaxValue;
+        return dist - (SelfHorizontalRadius() + PlayerHorizontalRadius());
+    }
+
+    private float SelfHorizontalRadius()
+    {
+        if (_selfCollider == null)
+        {
+            _selfCollider = GetComponent<Collider>();
+            if (_selfCollider == null) _selfCollider = GetComponentInChildren<Collider>();
+        }
+        return HorizontalRadius(_selfCollider);
+    }
+
+    private float PlayerHorizontalRadius()
+    {
+        if (_playerCollider == null && _player != null)
+            _playerCollider = _player.GetComponentInChildren<Collider>();
+        return HorizontalRadius(_playerCollider);
+    }
+
+    /// <summary>取碰撞体包围盒的水平半径（世界空间，随缩放与旋转变化）。</summary>
+    private static float HorizontalRadius(Collider col)
+    {
+        if (col == null) return 0f;
+        Vector3 e = col.bounds.extents;
+        return Mathf.Max(e.x, e.z);
     }
 
     /// <summary>结束连段，回到 Idle</summary>

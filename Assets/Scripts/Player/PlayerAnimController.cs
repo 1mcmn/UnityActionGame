@@ -1,4 +1,5 @@
 using UnityEngine;
+using SkillSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerAnimController : MonoBehaviour
@@ -18,6 +19,48 @@ public class PlayerAnimController : MonoBehaviour
             animator.updateMode = AnimatorUpdateMode.Normal;
         }
         rb = GetComponent<Rigidbody>();
+    }
+
+    // ──────────────── 技能结束 / 被打断：收回动画控制权 ────────────────
+    // 技能不会直接操作 Animator，只发一个"我要结束了"的事件；
+    // 具体回到待机还是移动，由这里按当前移动速度决定。
+    private void OnEnable()
+    {
+        SkillEvents.AnimationReturnRequested += OnSkillAnimationReturnRequested;
+    }
+
+    private void OnDisable()
+    {
+        SkillEvents.AnimationReturnRequested -= OnSkillAnimationReturnRequested;
+    }
+
+    private void OnSkillAnimationReturnRequested(Transform caster, string suggestedState)
+    {
+        if (caster == null) return;
+
+        // 只处理自己身上的技能（技能释放者可能是别人，比如怪物）
+        bool isSelf = caster == transform || caster.root == transform.root;
+        if (!isSelf) return;
+
+        ReturnToLocomotion(suggestedState);
+    }
+
+    /// <summary>
+    /// 回到移动/待机动画。
+    /// preferredState 留空时按当前移动速度自动选择：速度接近 0 回 Idle，否则回 Locomotion 混合树。
+    /// </summary>
+    public void ReturnToLocomotion(string preferredState = "", float fade = 0.1f)
+    {
+        if (animator == null) return;
+
+        string state = preferredState;
+        if (string.IsNullOrEmpty(state))
+        {
+            float movement = animator.GetFloat("Movement");
+            state = movement > 0.1f ? "Locomotion" : "Idle";
+        }
+
+        animator.CrossFadeInFixedTime(state, fade);
     }
 
     public void SetMovement(float value) { if (animator != null) animator.SetFloat("Movement", value); }
