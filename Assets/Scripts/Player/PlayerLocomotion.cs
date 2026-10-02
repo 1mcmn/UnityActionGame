@@ -13,6 +13,10 @@ public class PlayerLocomotion : MonoBehaviour
 
     private Rigidbody rb;
     private Transform cameraTransform;
+    private CameraFollow cameraFollow;
+    private Vector3 lastPlanarForward = Vector3.forward;
+    private Vector3 lastInputDirection, lastPhysicalPosition, lastPhysicalDirection;
+    private bool hasPhysicalPosition;
 
     private float currentBlend;
     private float lastTarget;
@@ -23,6 +27,10 @@ public class PlayerLocomotion : MonoBehaviour
     {
         rb = rigidbody;
         cameraTransform = camTransform;
+        cameraFollow = camTransform != null ? camTransform.GetComponent<CameraFollow>() : null;
+        if (camTransform != null) lastPlanarForward = Quaternion.Euler(0f, camTransform.eulerAngles.y, 0f) * Vector3.forward;
+        hasPhysicalPosition = rb != null;
+        if (hasPhysicalPosition) lastPhysicalPosition = rb.position;
     }
 
     /// <summary>
@@ -43,30 +51,17 @@ public class PlayerLocomotion : MonoBehaviour
         return (currentBlend, lastTarget);
     }
 
-    public void ResetBlending()
+    public void ResetBlending(float initialValue = 0f)
     {
-        currentBlend = 0f;
-        lastTarget = 0f;
+        currentBlend = Mathf.Max(0f, initialValue);
+        lastTarget = currentBlend;
     }
 
-    /// <summary>
-    /// FixedUpdate 中调用。根据当前移动输入施加世界速度。
-    /// blendTarget 为当前动画融合目标（0=Idle, 1=Move, 2=Run）。
-    /// 当 blendTarget=0 且 blend 未完成时，清零水平速度以匹配动画减速。
-    /// </summary>
-    public void ApplyMovement(Vector3 moveInput, bool isRunning, float blendTarget)
+    /// <summary>仅计算位移；唯一应用点在 PlayerAnimController.OnAnimatorMove。</summary>
+    public Vector3 GetDisplacement(Vector3 moveInput, bool isRunning, float deltaTime)
     {
-        if (rb == null) return;
-
-        // 减速至停止：参考代码在 _targetSpeed==0 && currentMovementValue>0.02f 时清零
-        if (blendTarget == 0f && !IsBlendingComplete)
-        {
-            rb.velocity = new Vector3(0f, rb.velocity.y, 0f);
-            return;
-        }
-
         float speed = isRunning ? moveSpeed * runSpeedMultiplier : moveSpeed;
-        rb.velocity = new Vector3(moveInput.x * speed, rb.velocity.y, moveInput.z * speed);
+        return Vector3.ClampMagnitude(moveInput, 1f) * speed * deltaTime;
     }
 
     /// <summary>
@@ -87,7 +82,7 @@ public class PlayerLocomotion : MonoBehaviour
     }
 
     /// <summary>
-    /// 闪避：清空水平速度，施加方向冲量（保留 Y 轴速度避免打断重力）。
+    /// 闪避起手清理物理残留；闪避位移由动画根位移提供。
     /// </summary>
     public void StartDodge(Vector3 direction)
     {
@@ -102,12 +97,45 @@ public class PlayerLocomotion : MonoBehaviour
     public Vector3 GetCameraRelativeInput(float h, float v)
     {
         Vector3 input = new Vector3(h, 0f, v).normalized;
-        if (cameraTransform == null) return input;
+        if (cameraTransform == null) return lastInputDirection = input;
 
-        Vector3 forward = cameraTransform.forward;
-        Vector3 right = cameraTransform.right;
-        forward.y = 0f; right.y = 0f;
-        forward.Normalize(); right.Normalize();
-        return (forward * input.z + right * input.x).normalized;
+        Vector3 forward = cameraFollow != null && cameraFollow.isActiveAndEnabled ? cameraFollow.PlanarForward : cameraTransform.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude > .0001f) lastPlanarForward = forward.normalized;
+        forward = lastPlanarForward;
+        // 水平右向必须由前向重新构造，独立投影相机right会在倾斜/侧滚时形成斜基底。
+        Vector3 right = Vector3.Cross(Vector3.up, forward);
+        return lastInputDirection = (forward * input.z + right * input.x).normalized;
+    }
+
+    /// <summary>键盘方向键正在使用时优先采用键盘，避免同名手柄轴混入横向漂移。</summary>
+    public static Vector2 ResolveMoveAxes(Vector2 axisInput, bool left, bool right, bool forward, bool back)
+    {
+        if (left || right || forward || back)
+            return new Vector2((right ? 1f : 0f) - (left ? 1f : 0f), (forward ? 1f : 0f) - (back ? 1f : 0f));
+        return Vector2.ClampMagnitude(axisInput, 1f);
+    }
+
+    private void LateUpdate()
+    {
+        if (rb == null) return;
+        Vector3 delta = rb.position - lastPhysicalPosition;
+        delta.y = 0f;
+        if (hasPhysicalPosition && delta.sqrMagnitude > .000001f) lastPhysicalDirection = delta.normalized;
+        lastPhysicalPosition = rb.position;
+        hasPhysicalPosition = true;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (!Application.isPlaying) return;
+        Vector3 origin = transform.position + Vector3.up * .25f;
+        // 蓝：物理根朝向；绿：当前输入方向；红：最近一次实际水平位移。
+        Gizmos.color = Color.blue;
+        Gizmos.DrawLine(origin, origin + transform.forward * 1.5f);
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(origin, origin + lastInputDirection * 1.3f);
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(origin, origin + lastPhysicalDirection * 1.1f);
     }
 }

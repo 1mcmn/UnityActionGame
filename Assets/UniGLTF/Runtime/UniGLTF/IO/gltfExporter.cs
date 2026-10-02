@@ -236,6 +236,7 @@ namespace UniGLTF
             // do nothing
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// AnimationClip を収集する。
         /// </summary>
@@ -254,9 +255,13 @@ namespace UniGLTF
             }
             return clips;
         }
+#endif
 
         public virtual void ExportAnimations()
         {
+#if UNITY_EDITOR
+            // AnimationExporter 的曲线导出 API 仅在编辑器编译。
+            // 运行时保留该公开入口，但不能引用已被条件编译排除的方法。
             if (Application.isPlaying)
             {
                 // UnityEditor.AnimationUtility などが Editor 専用のため、
@@ -309,6 +314,7 @@ namespace UniGLTF
                 animationWithCurve.Animation.name = clip.name;
                 _gltf.animations.Add(animationWithCurve.Animation);
             }
+#endif
         }
 
         public virtual void Export(ITextureSerializer textureSerializer)

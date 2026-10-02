@@ -84,7 +84,7 @@ namespace SkillSystem
             { "无敌帧", typeof(InvincibleWindowComponent) },
         };
 
-        [MenuItem("Tools/技能编辑器")]
+        [MenuItem("Tools/历史工具/技能组件编辑器")]
         public static void ShowWindow()
         {
             var window = GetWindow<SkillEditorWindow>("技能编辑器");

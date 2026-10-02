@@ -12,8 +12,60 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 252088645b3687949b8bdd81404d381f, type: 3}
   m_Name: ComboData
   m_EditorClassIdentifier: 
+  displayName: "\u666E\u901A\u8FDE\u62DB"
+  schemaVersion: 1
+  revision: 1
+  steps:
+  - stepId: a6d6fd43997e4f9c85b41a7d5babf244
+    displayName: "\u653B\u51FB 1"
+    animationClip: {fileID: 0}
+    damage: 15
+    hitStart: 0.1
+    hitEnd: 0.3
+    comboStart: 0.4
+    comboEnd: 0.7
+    rootMotionScaleXZ: 1
+    hitRadius: 1.2
+    hitOffset: {x: 0, y: 0.8, z: 1}
+    allowCancel: 1
+    cancelStart: 0.5
+    cancelEnd: 0.8
+    soundEvents: []
+  - stepId: b6b377d7464249d09252af6c91b00626
+    displayName: "\u653B\u51FB 2"
+    animationClip: {fileID: 0}
+    damage: 15
+    hitStart: 0.1
+    hitEnd: 0.3
+    comboStart: 0.4
+    comboEnd: 0.7
+    rootMotionScaleXZ: 1
+    hitRadius: 1.2
+    hitOffset: {x: 0, y: 0.8, z: 1}
+    allowCancel: 1
+    cancelStart: 0.5
+    cancelEnd: 0.8
+    soundEvents: []
+  - stepId: 9b76fa337a41475aa45c9ee8254d6ff8
+    displayName: "\u653B\u51FB 3"
+    animationClip: {fileID: 0}
+    damage: 15
+    hitStart: 0.1
+    hitEnd: 0.3
+    comboStart: 0.4
+    comboEnd: 0.7
+    rootMotionScaleXZ: 1
+    hitRadius: 1.2
+    hitOffset: {x: 0, y: 0.8, z: 1}
+    allowCancel: 1
+    cancelStart: 0.5
+    cancelEnd: 0.8
+    soundEvents: []
   attackDuration: 0.45
   attackRadius: 2.5
+  comboWindowPercent: 0.35
+  comboGraceWindow: 0.15
+  maxComboStep: 4
   comboDamages:
   - 15
   - 18

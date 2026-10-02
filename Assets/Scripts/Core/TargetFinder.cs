@@ -12,19 +12,21 @@ public static class TargetFinder
     {
         if (from == null) return null;
 
-        Collider[] cols = Physics.OverlapSphere(from.position, radius, mask);
+        Collider[] cols = Physics.OverlapSphere(from.position, radius, mask, QueryTriggerInteraction.Collide);
         Transform best = null;
         float bestDist = float.MaxValue;
 
         foreach (Collider c in cols)
         {
-            Vector3 toTarget = c.transform.position - from.position;
+            Enemy enemy = c.GetComponentInParent<Enemy>();
+            if (enemy == null || enemy.IsDead || !enemy.AcceptsCollider(c)) continue;
+            Vector3 toTarget = enemy.transform.position - from.position;
             toTarget.y = 0f;
             float d = toTarget.sqrMagnitude;
             if (d < bestDist)
             {
                 bestDist = d;
-                best = c.transform;
+                best = enemy.transform;
             }
         }
         return best;

@@ -19,12 +19,26 @@ public class CameraFollow : MonoBehaviour
     private float pitch;
     private Vector3 desiredPosition;
     private Quaternion desiredRotation;
+    private bool orientationInitialized;
+
+    /// <summary>以相机目标朝向计算输入基准，避免跟随平滑的暂时转角让直行路线弯曲。</summary>
+    public Vector3 PlanarForward
+    {
+        get
+        {
+            Vector3 forward = orientationInitialized
+                ? -(Quaternion.Euler(pitch, yaw, 0f) * offset) : transform.forward;
+            forward.y = 0f;
+            return forward.sqrMagnitude > .0001f ? forward.normalized : Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+        }
+    }
 
     private void Start()
     {
         if (target == null) return;
-        yaw = 0f;
+        yaw = transform.eulerAngles.y;
         pitch = 15f;
+        orientationInitialized = true;
         if (lockCursorOnStart)
         {
             Cursor.lockState = CursorLockMode.Locked;

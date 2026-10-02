@@ -1,0 +1,124 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb17406ee20de3447a0eec03fdf72f46, type: 3}
+  m_Name: GreatSwordEnemyConfig
+  m_EditorClassIdentifier: 
+  greatSwordEnabled: 1
+  idleClip: {fileID: 7400000, guid: e76d6ad961f032b4c908946eff2521c4, type: 2}
+  walkClip: {fileID: 7400000, guid: a3c13c3e683673e46b2e455b7d16630d, type: 2}
+  runClip: {fileID: 7400000, guid: 80340304c8fc673448879a68fd35e65c, type: 2}
+  guardStartClip: {fileID: 7400000, guid: 73c6d5f8e19fc0148bcec401dd08f0c3, type: 2}
+  guardLoopClip: {fileID: 7400000, guid: 76c71469c741f9845a8eed6a31889306, type: 2}
+  guardHitClip: {fileID: 7400000, guid: 585a521a6f3769b40979d09936dd5bc1, type: 2}
+  hitClip: {fileID: 7400000, guid: dab0ca777a9f2dd4b8339f78d4a9a675, type: 2}
+  downStartClip: {fileID: 7400000, guid: 7073ea303badc144abdde2068af51e8a, type: 2}
+  downLoopClip: {fileID: 7400000, guid: 39df9109d3cdf0241a8c1a716c6e10c0, type: 2}
+  getUpClip: {fileID: 7400000, guid: 7f49f4aa1e01e5942a1bce9a8cfdcc91, type: 2}
+  deathClip: {fileID: 7400000, guid: 82678894af8a2e44a98c291702ee0ca8, type: 2}
+  airborneClip: {fileID: 7400000, guid: 4224eccaa82b7f6489373302a53bb5c4, type: 2}
+  attackPlaceholderA: {fileID: 7400000, guid: d911c695aefec5a4cbb09d8af561f510, type: 2}
+  attackPlaceholderB: {fileID: 7400000, guid: b465266dea736bd4f98ae344298a9b95, type: 2}
+  lightAttack1:
+    clip: {fileID: 7400000, guid: 6bddcdfebb3a83e46991aa42b76c7259, type: 3}
+    speed: 1.15
+    damage: 12
+    hitStart: 0.4
+    hitEnd: 0.72
+    lockFacingTime: 0.3
+    rootMotionScale: 0.35
+    hitRadius: 0.5
+    hitOffset: {x: 0, y: 0.9, z: 1.1}
+    parryable: 0
+    superArmor: 0
+    parryStart: 0.06
+    parryEnd: 0.46
+  lightAttack2:
+    clip: {fileID: 7400000, guid: 1a436aa52e89b8049bdafcd98b98ca6b, type: 3}
+    speed: 1.15
+    damage: 14
+    hitStart: 0.22
+    hitEnd: 0.48
+    lockFacingTime: 0.12
+    rootMotionScale: 0.35
+    hitRadius: 0.5
+    hitOffset: {x: 0, y: 0.9, z: 1.1}
+    parryable: 0
+    superArmor: 0
+    parryStart: 0.06
+    parryEnd: 0.28
+  heavyAttack:
+    clip: {fileID: 7400000, guid: 71a03bdedd7a648428ddd1ac85086e72, type: 3}
+    speed: 1.15
+    damage: 20
+    hitStart: 0.65
+    hitEnd: 0.95
+    lockFacingTime: 0.54999995
+    rootMotionScale: 0.35
+    hitRadius: 0.5
+    hitOffset: {x: 0, y: 0.9, z: 1.1}
+    parryable: 1
+    superArmor: 1
+    parryStart: 0.06
+    parryEnd: 0.71
+  counterAttack:
+    clip: {fileID: 7400000, guid: 98b40a0f8d28b2541854c6fa4941f7bb, type: 3}
+    speed: 1.15
+    damage: 16
+    hitStart: 0.55
+    hitEnd: 0.82
+    lockFacingTime: 0.45000002
+    rootMotionScale: 0.35
+    hitRadius: 0.5
+    hitOffset: {x: 0, y: 0.9, z: 1.1}
+    parryable: 1
+    superArmor: 1
+    parryStart: 0.06
+    parryEnd: 0.61
+  guardDuration: 4.8
+  guardHalfAngle: 65
+  guardCounterHits: 4
+  guardCountTimeout: 2
+  guardPoiseMultiplier: 0.7
+  parryPoiseDamage: 45
+  breakDuration: 3.2
+  ordinaryHitCooldown: 0.65
+  launchHeight: 2.2
+  airGravity: 10
+  apexHoldTime: 0.65
+  maximumAirDuration: 3
+  slamSpeed: 8
+  detectRadius: 12
+  closeRadius: 5
+  attackRadius: 1.75
+  attack06Radius: 2
+  loseTargetMultiplier: 1.5
+  patrolEnabled: 1
+  patrolRadius: 4
+  patrolWaitTime: 1.5
+  patrolArrivalDistance: 0.35
+  walkSpeed: 1.8
+  runSpeed: 3.5
+  rotationSpeed: 8
+  comboWindow: 0.6
+  attackCooldown: 1.5
+  attack06Chance: 0.3
+  attackDamage: 12
+  hitDelay: 0.25
+  stunDuration: 3
+  speedLerpRate: 5
+  maxHealth: 260
+  maxPoise: 65
+  poiseDecayRate: 1.5
+  damageReduction: 0.1
+  knockbackForce: 3
+  invulnerabilityDuration: 0.06
+  deathDelay: 2.5

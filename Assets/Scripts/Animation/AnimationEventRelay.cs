@@ -9,6 +9,28 @@ public class AnimationEventRelay : MonoBehaviour
 {
     [Header("攻击")]
     [SerializeField] private PlayerCombat _combat;
+    private PlayerAnimController _motion;
+    private Animator _animator;
+    private PlayerAirCombat _air;
+
+    public void Bind(PlayerCombat combat, PlayerAnimController motion) { _combat = combat; _motion = motion; _animator = GetComponent<Animator>(); _air = GetComponentInParent<PlayerAirCombat>(); }
+    private void Awake()
+    {
+        if (_combat == null) _combat = GetComponentInParent<PlayerCombat>();
+        _motion = GetComponentInParent<PlayerAnimController>();
+        _animator = GetComponent<Animator>();
+        _air = GetComponentInParent<PlayerAirCombat>();
+    }
+    private void OnAnimatorMove()
+    {
+        if (_motion != null && _motion.gameObject != gameObject) _motion.ApplyRootMotion(_animator);
+    }
+    public void ComboHitOpen(AnimationEvent e) { _combat?.OnComboHitOpen(e); }
+    public void ComboHitClose(AnimationEvent e) { _combat?.OnComboHitClose(e); }
+    public void ComboSound(AnimationEvent e) { _combat?.OnComboSound(e); }
+    public void AirHitOpen(AnimationEvent e) { _air?.OnHitEvent(e, true); }
+    public void AirHitClose(AnimationEvent e) { _air?.OnHitEvent(e, false); }
+    public void AirSound(AnimationEvent e) { _air?.OnSound(e); }
 
     // ========== 攻击：带参（Animation Event String 栏填前缀） ==========
 

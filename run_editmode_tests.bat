@@ -1,37 +1,49 @@
 @echo off
-setlocal
-rem ============================================================
-rem  One-click EditMode test run (headless batch mode).
-rem  Usage : run_editmode_tests.bat [--nopause]
-rem  IMPORTANT: close the Tuanjie/Unity editor for this project
-rem  before running - two instances cannot share the Library.
-rem  Results: TestResults\EditMode-results.xml  +  editmode-log.txt
-rem ============================================================
+setlocal EnableExtensions DisableDelayedExpansion
+rem Uses this checkout and its ProjectVersion.txt. Never closes an open editor.
+rem Usage: run_editmode_tests.bat [--nopause] [--check-only]
+rem Optional: EDITMODE_EDITOR = full path to the matching Tuanjie.exe.
 
-set "TUANJIE=C:\Program Files\Tuanjie\Hub\Editor\2022.3.62t10\Editor\Tuanjie.exe"
-set "PROJ=E:\Unity\My project"
-set "OUT=%PROJ%\TestResults"
-set "PAUSE=1"
-if /i "%~1"=="--nopause" set "PAUSE=0"
+set "TEST_PAUSE=1"
+set "TEST_CHECK_ONLY="
+set "TEST_EXIT=0"
 
-if not exist "%TUANJIE%" (
-    echo [FAIL] Tuanjie editor not found: %TUANJIE%
-    pause
-    exit /b 1
+:parse_args
+if "%~1"=="" goto run
+if /i "%~1"=="--nopause" (
+    set "TEST_PAUSE=0"
+    shift
+    goto parse_args
 )
-
-if not exist "%OUT%" mkdir "%OUT%"
-
-echo === Running EditMode tests (first run imports the project, may take minutes) ===
-"%TUANJIE%" -batchmode -nographics -projectPath "%PROJ%" -runTests -testPlatform EditMode -testResults "%OUT%\EditMode-results.xml" -logFile "%OUT%\editmode-log.txt" -quit
-set "RC=%errorlevel%"
-
-echo.
-if exist "%OUT%\EditMode-results.xml" (
-    powershell -NoProfile -Command "$x=[xml](Get-Content '%OUT%\EditMode-results.xml'); $r=$x.'test-run'; 'Result: total={0} passed={1} failed={2} skipped={3} duration={4}s' -f $r.total,$r.passed,$r.failed,$r.skipped,[math]::Round([double]$r.duration,2)"
-) else (
-    echo [FAIL] No result file generated, check "%OUT%\editmode-log.txt"
+if /i "%~1"=="--check-only" (
+    set "TEST_CHECK_ONLY=-CheckOnly"
+    shift
+    goto parse_args
 )
-if not %RC% equ 0 echo [NOTE] batch exit code %RC% (0 = all passed, 2 = some tests failed)
-if "%PAUSE%"=="1" pause
-exit /b 0
+if /i "%~1"=="--help" goto show_help
+echo [FAIL] Unknown argument: "%~1"
+set "TEST_EXIT=2"
+set "TEST_PAUSE=0"
+goto finish
+
+:run
+if not exist "%~dp0Scripts\run_editmode_tests.ps1" (
+    echo [FAIL] Missing helper: "%~dp0Scripts\run_editmode_tests.ps1"
+    set "TEST_EXIT=2"
+    goto finish
+)
+rem -File arguments keep paths out of executable PowerShell source code.
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0Scripts\run_editmode_tests.ps1" -ProjectRoot "%~dp0." %TEST_CHECK_ONLY%
+set "TEST_EXIT=%errorlevel%"
+goto finish
+
+:show_help
+echo Usage: run_editmode_tests.bat [--nopause] [--check-only]
+echo --check-only checks setup without starting the editor or running tests.
+echo Set EDITMODE_EDITOR to the matching Tuanjie.exe if it is installed elsewhere.
+echo Results: TestResults\EditMode-timestamp-unique-id\results.xml and editor.log
+set "TEST_PAUSE=0"
+
+:finish
+if "%TEST_PAUSE%"=="1" pause
+exit /b %TEST_EXIT%

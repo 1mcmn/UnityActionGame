@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abc873dae8f12074b8aac15fd5af125c, type: 3}
+  m_Name: ComboDemoSounds
+  m_EditorClassIdentifier: 
+  sounds:
+  - soundID: atk01_swing_01
+    clip: {fileID: 8300000, guid: 9a53976782375b0408c3d1ff2ad3d1d2, type: 3}
+  - soundID: atk01_hit_01
+    clip: {fileID: 8300000, guid: 4722db49d11c96840828441c62168f71, type: 3}
+  - soundID: atk02_swing_01
+    clip: {fileID: 8300000, guid: 906f89d0b00760f4fb70fcb0b24ea92c, type: 3}
+  - soundID: atk02_hit_01
+    clip: {fileID: 8300000, guid: 0dd9bfe1aa35ec24299e2e031e502909, type: 3}
+  - soundID: atk03_swing_01
+    clip: {fileID: 8300000, guid: ae30f1c5f4b1ab945abafbebef4122c6, type: 3}
+  - soundID: atk03_hit_01
+    clip: {fileID: 8300000, guid: 63a87eed7a832474d877186cd986fd91, type: 3}
+  - soundID: atk04_swing_01
+    clip: {fileID: 8300000, guid: a4b4a69b3da350f44803325f3df9680e, type: 3}
+  - soundID: atk04_hit_01
+    clip: {fileID: 8300000, guid: e8a03d7c36336c14cb6aef11906dd855, type: 3}
+  - soundID: atk05_swing_01
+    clip: {fileID: 8300000, guid: 49a32dfe442f46d4a9d8a9c50df40eea, type: 3}
+  - soundID: atk05_hit_01
+    clip: {fileID: 8300000, guid: 1d26bf8a0f2e7c34f911bf6af03a62f6, type: 3}
+  - soundID: foot_step_01
+    clip: {fileID: 8300000, guid: 50759fb6ffaef6244b0b03595fffa1e3, type: 3}
+  - soundID: foot_step_02
+    clip: {fileID: 8300000, guid: 42c85de6069a6094b87988f8e4ab8117, type: 3}
+  - soundID: foot_step_03
+    clip: {fileID: 8300000, guid: 8baba8e7d19d5764a8906dac2ac23594, type: 3}
+  - soundID: foot_step_04
+    clip: {fileID: 8300000, guid: e580ffb913d1f6844a29bfd5f7e22434, type: 3}
+  - soundID: foot_step_05
+    clip: {fileID: 8300000, guid: d4336343f290fd5479bf7881a4ce418f, type: 3}
+  - soundID: foot_step_06
+    clip: {fileID: 8300000, guid: 206b59d64c6066148b8a924542a3e465, type: 3}
+  - soundID: foot_step_07
+    clip: {fileID: 8300000, guid: 3d35e4523a9f8934e89b283f3cfb33ca, type: 3}
+  - soundID: foot_step_08
+    clip: {fileID: 8300000, guid: 76038c5962608ae49a13c01ff6869640, type: 3}
+  - soundID: sword_hit_03
+    clip: {fileID: 8300000, guid: f1e632bd78f98334da9b373d9bcea02a, type: 3}
+  - soundID: sword_sheath_01
+    clip: {fileID: 8300000, guid: 0a7d32d73ddabde4f9d9e2535bc28bdb, type: 3}
+  - soundID: sword_scabbard_01
+    clip: {fileID: 8300000, guid: e9a1d3f9791db9643961ac91d2f3c140, type: 3}
+  - soundID: weapon_end_01
+    clip: {fileID: 8300000, guid: 0a7d32d73ddabde4f9d9e2535bc28bdb, type: 3}
+  - soundID: weapon_back_01
+    clip: {fileID: 8300000, guid: e9a1d3f9791db9643961ac91d2f3c140, type: 3}

@@ -47,6 +47,11 @@ public class Enemy : MonoBehaviour
     private Collider _collider;
     private Rigidbody _rigidbody;
     private EnemyStatusBar _statusBar;
+    private GreatSwordEnemyBrain _swordBrain;
+    private EnemyHurtbox[] _hurtboxes;
+    public bool UsesDedicatedHurtbox => _hurtboxes != null && _hurtboxes.Length > 0;
+    public bool AcceptsCollider(Collider candidate) => candidate != null &&
+        (!UsesDedicatedHurtbox || candidate.GetComponent<EnemyHurtbox>() != null);
 
     // 公开属性（EnemyAI 会通过 GetComponent 自己拿 Animator / Rigidbody）
 
@@ -77,6 +82,8 @@ public class Enemy : MonoBehaviour
         _currentPoise = 0f;
         _collider = GetComponent<Collider>();
         _rigidbody = GetComponent<Rigidbody>();
+        _swordBrain = GetComponent<GreatSwordEnemyBrain>();
+        _hurtboxes = GetComponentsInChildren<EnemyHurtbox>(true);
 
         // EnemyAI 自己处理根运动，不再禁用它
 
@@ -99,7 +106,7 @@ public class Enemy : MonoBehaviour
             _invulnerabilityTimer -= Time.deltaTime;
 
         // 僵直条衰减（不受击时缓慢回复）
-        if (_currentPoise > 0f && _invulnerabilityTimer <= 0f)
+        if (_currentPoise > 0f && _invulnerabilityTimer <= 0f && (_swordBrain == null || !_swordBrain.IsBroken))
         {
             _currentPoise = Mathf.Max(0f, _currentPoise - _poiseDecayRate * Time.deltaTime);
             OnPoiseChanged?.Invoke(_currentPoise);
@@ -133,20 +140,32 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(float damage, Vector3? hitDirection = null)
     {
-        if (_isDead) return;
+        Vector3 direction = hitDirection ?? transform.forward;
+        ReceiveHit(damage, damage, transform.position - direction.normalized, direction);
+    }
+
+    public EnemyHitResult ReceiveHit(float damage, float poiseDamage, Vector3 attackerPosition, Vector3 knockbackDirection)
+    {
+        if (_isDead || damage < 0 || !ComboData.Finite(damage) || !ComboData.Finite(poiseDamage)) return EnemyHitResult.Ignored;
 
         // 无敌帧（防止同一攻击多次判定）
-        if (_invulnerabilityTimer > 0f) return;
+        if (_invulnerabilityTimer > 0f) return EnemyHitResult.Ignored;
         _invulnerabilityTimer = _invulnerabilityDuration;
 
+        if (_swordBrain != null && _swordBrain.IsConfigured && _swordBrain.CanGuard(attackerPosition))
+        {
+            AddPoise(poiseDamage * _swordBrain.Config.guardPoiseMultiplier);
+            _swordBrain.OnGuarded();
+            return EnemyHitResult.Blocked;
+        }
+
         // 减伤：僵直条满之前伤害减免
-        float actualDamage = IsKnockedDown ? damage : damage * (1f - _damageReduction);
-        _currentHealth -= actualDamage;
+        float actualDamage = (IsKnockedDown || (_swordBrain != null && _swordBrain.IsBroken)) ? damage : damage * (1f - _damageReduction);
+        _currentHealth = Mathf.Max(0, _currentHealth - actualDamage);
+        _isDead = _currentHealth <= 0;
 
         // 僵直值用原始伤害累加
-        float oldPoise = _currentPoise;
-        _currentPoise = Mathf.Min(_currentPoise + damage, _maxPoise);
-        OnPoiseChanged?.Invoke(_currentPoise);
+        AddPoise(poiseDamage);
 
         GameLog.Log($"[Enemy] {name} 受到 {damage} 伤害(实际{actualDamage:F1}), " +
                   $"血量{_currentHealth}/{_maxHealth}, 僵直{_currentPoise}/{_maxPoise}");
@@ -155,6 +174,18 @@ public class Enemy : MonoBehaviour
         OnHealthChanged?.Invoke(_currentHealth);
         OnHit?.Invoke(damage);
 
+        if (!_isDead && knockbackDirection.sqrMagnitude > .0001f) ApplyKnockback(knockbackDirection);
+        if (_isDead) { OnDeath?.Invoke(); Die(); }
+        return EnemyHitResult.Damaged;
+    }
+
+    public void AddPoise(float amount)
+    {
+        if (!ComboData.Finite(amount)) return;
+        float oldPoise = _currentPoise;
+        _currentPoise = Mathf.Clamp(_currentPoise + Mathf.Max(0, amount), 0, _maxPoise);
+        OnPoiseChanged?.Invoke(_currentPoise);
+        if (_isDead) return;
         // 僵直条事件（只触发一次）
         if (!_hasStaggered && _currentPoise >= _maxPoise * 0.5f && _currentPoise < _maxPoise)
         {
@@ -167,23 +198,13 @@ public class Enemy : MonoBehaviour
             OnKnockdown?.Invoke();
         }
 
-        // 击退
-        if (hitDirection.HasValue && hitDirection.Value != Vector3.zero)
-            ApplyKnockback(hitDirection.Value);
-
-        // 死亡
-        if (_currentHealth <= 0f)
-        {
-            _currentHealth = 0f;
-            _isDead = true;
-            GameLog.Log($"[Enemy] {name} 死亡！");
-            OnDeath?.Invoke();
-            Die();
-        }
     }
+
+    public void ResetPoise() { _currentPoise = 0; _hasStaggered = false; OnPoiseChanged?.Invoke(0); }
 
     private void ApplyKnockback(Vector3 direction)
     {
+        if (_swordBrain != null && _swordBrain.IsConfigured) { _swordBrain.QueueKnockback(direction, _knockbackForce * .05f); return; }
         if (_rigidbody != null && !_isDead)
             _rigidbody.AddForce(direction.normalized * _knockbackForce, ForceMode.Impulse);
     }
@@ -192,6 +213,7 @@ public class Enemy : MonoBehaviour
     {
         // 物理/碰撞清理，动画由 EnemyAI 接管（播放死亡动画后 Destroy）
         if (_collider != null) _collider.enabled = false;
+        if (_hurtboxes != null) foreach (var hurt in _hurtboxes) if (hurt != null) hurt.GetComponent<Collider>().enabled = false;
         if (_rigidbody != null) _rigidbody.isKinematic = true;
 
         Destroy(gameObject, _deathDelay);
@@ -206,3 +228,5 @@ public enum HitDirection
     Left,
     Right
 }
+
+public enum EnemyHitResult { Ignored, Blocked, Damaged }

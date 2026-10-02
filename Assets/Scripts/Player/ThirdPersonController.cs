@@ -1,7 +1,8 @@
 using System;
 using UnityEngine;
 
-public enum PlayerState { Idle, Move, Run, Dodge, Attack, Parry, Block, Hit, Knockdown, Dead }
+public enum PlayerState { Idle, Move, Run, Dodge, Attack, Parry, Block, Hit, Knockdown, Dead, Jump, AirAction }
+public enum PlayerStateGroup { Locomotion, Action, Disabled }
 
 [RequireComponent(typeof(Rigidbody))]
 public class ThirdPersonController : MonoBehaviour
@@ -19,6 +20,13 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private LayerMask groundLayer = ~0;
     [Tooltip("地面射线检测距离")]
     [SerializeField] private float groundCheckDistance = 0.2f;
+    [Header("跳跃（位移统一在 OnAnimatorMove 应用）")]
+    [SerializeField, Min(.1f)] private float jumpHeight = 1.2f;
+    [SerializeField] private float gravity = -20f;
+    private float _verticalSpeed;
+    private float _jumpStartedAt;
+    private float _groundCorrection;
+    private readonly RaycastHit[] _groundHits = new RaycastHit[16];
 
     [Header("攻击手感")]
     [Tooltip("攻击命中判定的延迟时间")]
@@ -44,18 +52,28 @@ public class ThirdPersonController : MonoBehaviour
     [Header("受击")]
     [Tooltip("受击硬直时长（秒，对应受击动画播放期间）")]
     [SerializeField] private float _hitDuration = 0.6f;
+    [SerializeField, Min(0f)] private float _hitKnockbackDistance = .35f;
 
     private Collider characterCollider;
     private bool isGrounded;
 
     private PlayerState currentState = PlayerState.Idle;
     private Rigidbody rb;
+    private PlayerAirCombat _air;
+    public bool IsGroundedForActions => isGrounded;
+    public void BeginAirAction() { if (currentState != PlayerState.Dead) ChangeState(PlayerState.AirAction); }
+    public void EndAirAction(float verticalSpeed) { _verticalSpeed = verticalSpeed; if (currentState == PlayerState.AirAction) ChangeState(ResolveLocomotionState()); }
     private Vector3 moveInput;
     private float dodgeTimer;
+    private float dodgeElapsed;
     private float parryTimer;
     private float hitTimer;
     private bool  _parryTriggered;
     private Coroutine _knockbackRoutine;
+    private Vector3 _externalMotion;
+    private Coroutine _delayedHitRoutine;
+    private bool _attackPressedThisFrame;
+    private int _enabledFrame;
 
     // 输入缓冲：防止180°转向时短暂无输入导致状态闪烁
     private float _inputBufferTimer;
@@ -72,7 +90,7 @@ public class ThirdPersonController : MonoBehaviour
     [SerializeField] private float _walkStepInterval = 0.5f;
     [SerializeField] private float _runStepInterval = 0.3f;
 
-    // 当前帧的动画融合目标（只读，供 ApplyMovement 使用）
+    // 当前帧的移动动画融合目标
     private float blendTarget;
 
     // 公开访问器（向后兼容外部调用）
@@ -80,6 +98,11 @@ public class ThirdPersonController : MonoBehaviour
     public float MaxHealth => combat != null ? combat.MaxHealth : 0f;
 
     public bool IsBlocking => currentState == PlayerState.Block || currentState == PlayerState.Parry;
+    public PlayerState State => currentState;
+    public PlayerStateGroup StateGroup => currentState == PlayerState.Dead ? PlayerStateGroup.Disabled :
+        (currentState == PlayerState.Idle || currentState == PlayerState.Move || currentState == PlayerState.Run || currentState == PlayerState.Jump ? PlayerStateGroup.Locomotion : PlayerStateGroup.Action);
+    public bool CanReloadCombo => StateGroup == PlayerStateGroup.Locomotion && currentState != PlayerState.Jump;
+    public event Action<PlayerState, PlayerState> StateChanged;
 
     public void TryTakeDamage(float damage, Vector3? attackerPosition = null)
     {
@@ -92,7 +115,17 @@ public class ThirdPersonController : MonoBehaviour
             return;
         }
 
+        float before = combat.CurrentHealth;
         combat.TakeDamage(damage, attackerPosition);
+        if (combat.CurrentHealth > 0f && combat.CurrentHealth < before)
+        {
+            Vector3 away = attackerPosition.HasValue ? transform.position - attackerPosition.Value : -transform.forward;
+            away.y = 0f;
+            if (away.sqrMagnitude < .001f) away = -transform.forward;
+            if (_knockbackRoutine != null) StopCoroutine(_knockbackRoutine);
+            _externalMotion = Vector3.zero;
+            _knockbackRoutine = StartCoroutine(KnockbackRoutine(away.normalized, _hitKnockbackDistance, .15f));
+        }
     }
 
     /// <summary>格挡命中：泄力动画 + 小击退 + 架势积累；架势满则倒地</summary>
@@ -122,13 +155,12 @@ public class ThirdPersonController : MonoBehaviour
     /// <summary>参数化击退：在 duration 内沿 dir 位移 distance（根运动状态下也稳定）</summary>
     private System.Collections.IEnumerator KnockbackRoutine(Vector3 dir, float distance, float duration)
     {
-        Vector3 start = rb.position;
-        Vector3 end = start + dir * distance;
         float t = 0f;
         while (t < duration)
         {
-            t += Time.deltaTime;
-            rb.MovePosition(Vector3.Lerp(start, end, Mathf.Min(1f, t / duration)));
+            float dt = Mathf.Min(Time.deltaTime, duration - t);
+            t += dt;
+            _externalMotion += dir * (distance * dt / Mathf.Max(.001f, duration));
             yield return null;
         }
     }
@@ -143,9 +175,12 @@ public class ThirdPersonController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        _air = GetComponent<PlayerAirCombat>();
         characterCollider = GetComponent<Collider>();
         rb.constraints = RigidbodyConstraints.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.useGravity = false; // 重力与跳跃统一经 OnAnimatorMove 移动，避免两套竖直位移叠加。
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
         if (locomotion == null) locomotion = GetComponent<PlayerLocomotion>();
         if (animCtrl == null) animCtrl = GetComponent<PlayerAnimController>();
@@ -168,38 +203,67 @@ public class ThirdPersonController : MonoBehaviour
         PlayerCombat.OnPlayerDeath -= OnPlayerDeath;
     }
 
+    private void OnEnable() { _enabledFrame = Time.frameCount; }
+
+    private void OnDisable()
+    {
+        if (_delayedHitRoutine != null) StopCoroutine(_delayedHitRoutine);
+        _delayedHitRoutine = null;
+        if (_knockbackRoutine != null) StopCoroutine(_knockbackRoutine);
+        _knockbackRoutine = null;
+        combat?.ResetAllTimers();
+        _bufferedAttack = _bufferedDodge = _bufferedParry = 0f;
+        _externalMotion = Vector3.zero;
+    }
+
     private void OnPlayerHit(int hitType)
     {
         if (currentState == PlayerState.Dead) return;
-        animCtrl.TriggerHit(hitType);
+        GetComponent<CombatFeedback>()?.Pulse(Color.red);
+        hitTimer = _hitDuration;
         ChangeState(PlayerState.Hit);
+        animCtrl.TriggerHit(hitType);
     }
 
     private void OnPlayerDeath()
     {
         combat.SetInvulnerable(true); // 死亡后不再受击
-        animCtrl.TriggerDeath();
         ChangeState(PlayerState.Dead);
+        animCtrl.TriggerDeath();
     }
 
     private void Update()
     {
         ReadInput();
         TickInputBuffers();
-        CheckGrounded();
-
-        switch (currentState)
+        combat.ApplyPendingReloadIfSafe();
+        if (_air != null && _air.TickInput()) { TickAnimatorBlend(); return; }
+        // 上层先区分移动/动作/禁用，移动子状态共享空中与跳跃规则。
+        if (StateGroup == PlayerStateGroup.Locomotion)
         {
-            case PlayerState.Idle: UpdateIdle(); break;
-            case PlayerState.Move: UpdateMove(); break;
-            case PlayerState.Run: UpdateRun(); break;
-            case PlayerState.Dodge: UpdateDodge(); break;
-            case PlayerState.Attack: UpdateAttack(); break;
-            case PlayerState.Parry: UpdateParry(); break;
-            case PlayerState.Block: UpdateBlock(); break;
-            case PlayerState.Hit: UpdateHit(); break;
-            case PlayerState.Knockdown: UpdateKnockdown(); break;
-            case PlayerState.Dead: break;
+            if (currentState != PlayerState.Jump && isGrounded && Time.frameCount > _enabledFrame + 1 && Input.GetKeyDown(KeyCode.Space))
+            {
+                _verticalSpeed = Mathf.Sqrt(2f * Mathf.Abs(gravity) * jumpHeight);
+                _jumpStartedAt = Time.time;
+                isGrounded = false;
+                ChangeState(PlayerState.Jump);
+            }
+            if (currentState == PlayerState.Jump) UpdateJump();
+            else if (currentState == PlayerState.Idle) UpdateIdle();
+            else if (currentState == PlayerState.Move) UpdateMove();
+            else if (currentState == PlayerState.Run) UpdateRun();
+        }
+        else if (StateGroup == PlayerStateGroup.Action)
+        {
+            switch (currentState)
+            {
+                case PlayerState.Dodge: UpdateDodge(); break;
+                case PlayerState.Attack: UpdateAttack(); break;
+                case PlayerState.Parry: UpdateParry(); break;
+                case PlayerState.Block: UpdateBlock(); break;
+                case PlayerState.Hit: UpdateHit(); break;
+                case PlayerState.Knockdown: UpdateKnockdown(); break;
+            }
         }
 
         TickAnimatorBlend();
@@ -208,10 +272,12 @@ public class ThirdPersonController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // 所有状态的位移由 OnAnimatorMove（根运动）驱动，这里只处理转向
+        // 地面校正每个物理步重新测量，避免多个动画步重复使用渲染帧留下的竖直修正量。
+        CheckGrounded();
+        // 位移仍由同一物理步的OnAnimatorMove应用，这里只处理转向。
         if (currentState == PlayerState.Attack || currentState == PlayerState.Dodge || currentState == PlayerState.Parry
             || currentState == PlayerState.Block || currentState == PlayerState.Hit
-            || currentState == PlayerState.Knockdown || currentState == PlayerState.Dead)
+            || currentState == PlayerState.Knockdown || currentState == PlayerState.Dead || currentState == PlayerState.AirAction)
             return;
 
         locomotion.RotateToward(moveInput);
@@ -222,10 +288,16 @@ public class ThirdPersonController : MonoBehaviour
     {
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
-        moveInput = locomotion.GetCameraRelativeInput(h, v);
+        Vector2 axes = PlayerLocomotion.ResolveMoveAxes(new Vector2(h, v),
+            Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow),
+            Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow),
+            Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow),
+            Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow));
+        moveInput = locomotion.GetCameraRelativeInput(axes.x, axes.y);
 
         // 记录按键并写入预输入缓冲
-        if (Input.GetMouseButtonDown(0)) _bufferedAttack = INPUT_BUFFER_WINDOW;
+        _attackPressedThisFrame = Input.GetMouseButtonDown(0);
+        if (_attackPressedThisFrame) _bufferedAttack = INPUT_BUFFER_WINDOW;
         if (Input.GetMouseButtonDown(1)) _bufferedParry = INPUT_BUFFER_WINDOW;
         if (Input.GetKeyDown(KeyCode.LeftShift)) _bufferedDodge = INPUT_BUFFER_WINDOW;
     }
@@ -254,17 +326,34 @@ public class ThirdPersonController : MonoBehaviour
     private void ChangeState(PlayerState next)
     {
         if (currentState == next) return;
+        PlayerState previous = currentState;
         OnExitState(currentState);
         currentState = next;
+        bool returningFromAction = previous == PlayerState.Attack || previous == PlayerState.Dodge || previous == PlayerState.Hit || previous == PlayerState.Parry || previous == PlayerState.Block || previous == PlayerState.AirAction || previous == PlayerState.Jump;
+        if (returningFromAction && (next == PlayerState.Idle || next == PlayerState.Move || next == PlayerState.Run))
+        {
+            // 回移动前同步参数，避免刚进入Locomotion时Movement仍为0又自动回Idle。
+            float target = next == PlayerState.Run ? 2f : next == PlayerState.Move ? 1f : 0f;
+            locomotion.ResetBlending(target);
+            animCtrl.SetMovement(target);
+            animCtrl.SetLastMoveSpeed(target);
+            animCtrl.SetRun(next == PlayerState.Run);
+            animCtrl.ReturnToLocomotion(next == PlayerState.Idle);
+        }
         OnEnterState(next);
+        StateChanged?.Invoke(previous, next);
     }
 
     private void OnEnterState(PlayerState state)
     {
         switch (state)
         {
+            case PlayerState.AirAction:
+                _bufferedAttack = _bufferedDodge = _bufferedParry = 0; locomotion.Halt();
+                break;
             case PlayerState.Dodge:
                 dodgeTimer = 0.4f;
+                dodgeElapsed = 0f;
                 combat.SetInvulnerable(true);
                 Vector3 dir = GetDodgeDirection();
                 locomotion.StartDodge(dir);
@@ -272,10 +361,21 @@ public class ThirdPersonController : MonoBehaviour
                 break;
 
             case PlayerState.Attack:
-                combat.StartAttack();
-                animCtrl.TriggerAttack();
                 FaceNearestEnemy();
-                StartCoroutine(DelayedHitDetection(_attackHitDelay));
+                if (combat.UsesConfiguredCombo)
+                {
+                    if (!combat.StartConfiguredAttack()) ChangeState(PlayerState.Idle);
+                }
+                else
+                {
+                    combat.StartAttack();
+                    animCtrl.TriggerAttack();
+                    ScheduleLegacyHit();
+                }
+                break;
+
+            case PlayerState.Jump:
+                animCtrl.TriggerJump();
                 break;
 
             case PlayerState.Parry:
@@ -311,18 +411,26 @@ public class ThirdPersonController : MonoBehaviour
     {
         switch (state)
         {
+            case PlayerState.AirAction:
+                if (_air != null && _air.Phase != PlayerAirCombat.AirPhase.None) { _verticalSpeed = _air.VerticalSpeed; _air.Cancel(); }
+                break;
             case PlayerState.Dodge:
                 combat.SetInvulnerable(false);
                 locomotion.ResetBlending();
                 break;
 
             case PlayerState.Attack:
+                if (_delayedHitRoutine != null) StopCoroutine(_delayedHitRoutine);
+                _delayedHitRoutine = null;
                 combat.ResetAllTimers();
+                _bufferedAttack = 0f;
+                animCtrl.ClearAttackTriggers();
                 locomotion.ResetBlending();
                 break;
 
             case PlayerState.Parry:
                 combat.SetInvulnerable(false);
+                _parryTriggered = false;
                 locomotion.ResetBlending();
                 break;
 
@@ -338,6 +446,12 @@ public class ThirdPersonController : MonoBehaviour
     {
         if (moveInput.sqrMagnitude > 0.01f) return moveInput;
         return transform.forward;
+    }
+
+    private PlayerState ResolveLocomotionState()
+    {
+        if (moveInput.sqrMagnitude <= .01f) return PlayerState.Idle;
+        return Input.GetKey(KeyCode.LeftShift) ? PlayerState.Run : PlayerState.Move;
     }
 
     // ─── 各状态 Update（匹配参考代码行为）──────────
@@ -393,9 +507,6 @@ public class ThirdPersonController : MonoBehaviour
         // Shift 点击 → 前冲
         if (ConsumeBufferedDodge()) { ChangeState(PlayerState.Dodge); return; }
 
-        // blend 加速未完成 → 阻塞 Run 切换（防瞬移）
-        if (!locomotion.IsBlendingComplete) return;
-
         if (Input.GetKey(KeyCode.LeftShift)) { ChangeState(PlayerState.Run); return; }
     }
 
@@ -424,22 +535,16 @@ public class ThirdPersonController : MonoBehaviour
             return;
         }
 
-        // blend 减速未完成 → 阻塞 Move 切换
-        if (!locomotion.IsBlendingComplete) return;
-
         if (!Input.GetKey(KeyCode.LeftShift)) { ChangeState(PlayerState.Move); return; }
     }
 
     private void UpdateDodge()
     {
         dodgeTimer -= Time.deltaTime;
-        if (dodgeTimer <= 0f)
-        {
-            if (moveInput.sqrMagnitude > 0.01f)
-                ChangeState(Input.GetKey(KeyCode.LeftShift) ? PlayerState.Run : PlayerState.Move);
-            else
-                ChangeState(PlayerState.Idle);
-        }
+        dodgeElapsed += Time.deltaTime;
+        // 无敌窗口维持原0.4秒，动作长度单独跟随动画进度，避免完整动画变成全程无敌。
+        if (dodgeTimer <= 0f) combat.SetInvulnerable(false);
+        if (animCtrl.DodgePlaybackFinished(dodgeElapsed)) ChangeState(ResolveLocomotionState());
     }
 
     private void UpdateParry()
@@ -499,71 +604,75 @@ public class ThirdPersonController : MonoBehaviour
 
     private void UpdateAttack()
     {
-        // 取消窗口：攻击收招后段（进度 > 55%）可用闪避/弹刀打断
-        if (combat.AttackProgress01 > 0.55f)
+        // 接段只读取本帧按下，通用缓冲不能把窗口前的输入带入窗口内。
+        _bufferedAttack = 0f;
+        if (combat.CanCancelAttack)
         {
             if (ConsumeBufferedDodge()) { ChangeState(PlayerState.Dodge); return; }
             if (ConsumeBufferedParry()) { ChangeState(PlayerState.Parry); return; }
-        if (Input.GetMouseButton(1)) { ChangeState(PlayerState.Block); return; }
+            if (Input.GetMouseButton(1)) { ChangeState(PlayerState.Block); return; }
+        }
+        if (combat.UsesConfiguredCombo)
+        {
+            if (_attackPressedThisFrame) combat.TryAdvanceConfiguredCombo();
+            if (combat.ConfiguredAttackFinished()) ChangeState(ResolveLocomotionState());
+            return;
         }
 
-        // 步骤 1：接受连击输入（动画驱动窗口：窗口外点击直接忽视，防抽搐）
-        if (ConsumeBufferedAttack())
+        if (_attackPressedThisFrame && combat.IsAttacking)
         {
-            bool animatorStillAttacking = !animCtrl.IsInState("Idle");
-            bool inWindow = combat.IsAttacking && animCtrl.GetNormalizedTime01() >= combat.ComboWindowStart;
-            bool inGraceTail = !combat.IsAttacking && animatorStillAttacking; // 计时结束但动画还在攻击状态
-            if (inWindow || inGraceTail)
-                combat.BufferCombo();
-            // 其余情况：窗口外点击直接丢弃
-        }
-
-        // 步骤 2：消费缓冲
-        if (combat.HasBufferedCombo)
-        {
-            if (animCtrl.IsInState("Idle"))
-            {
-                // 动画已回 Idle：视为"窗口外的新起手"，重打第一段（不会打断当前段 → 无抽搐）
-                combat.StartAttack();
-                animCtrl.TriggerAttack();
-                FaceNearestEnemy();
-            }
-            else if (combat.ConsumeBufferedCombo())
+            combat.BufferCombo();
+            if (combat.ConsumeBufferedCombo())
             {
                 animCtrl.TriggerNextAttack();
+                ScheduleLegacyHit();
+                return;
             }
-            StartCoroutine(DelayedHitDetection(_attackHitDelay));
-            return;
         }
-
-        // 步骤 3：挥刀倒计时
-        if (combat.IsAttacking)
-        {
-            combat.DecrementTimer(Time.deltaTime);
-            return;
-        }
-
-        // 步骤 3.5：残响窗口（段结束后保持攻击状态一小段时间，等慢点击续招）
+        if (combat.IsAttacking) { combat.DecrementTimer(Time.deltaTime); return; }
         combat.DecrementGraceTimer(Time.deltaTime);
-        if (combat.IsInGrace)
-            return;
+        if (combat.IsInGrace) return;
+        if (combat.IncrementForceExitTimer(Time.deltaTime) || animCtrl.IsInState("Idle") || animCtrl.IsInState("idle"))
+            ChangeState(ResolveLocomotionState());
+    }
 
-        // 步骤 4：强制退出保险
-        if (combat.IncrementForceExitTimer(Time.deltaTime))
+    private void UpdateJump()
+    {
+        _bufferedAttack = _bufferedDodge = _bufferedParry = 0f;
+        if (Time.time - _jumpStartedAt > .12f && isGrounded && _verticalSpeed <= 0f)
         {
-            combat.ResetForceExitTimer();
-            ChangeState(PlayerState.Idle);
-            return;
-        }
-
-        // 步骤 5：动画已回到 Idle 才退出
-        if (animCtrl.IsInState("Idle"))
-        {
-            combat.ResetForceExitTimer();
-            ChangeState(PlayerState.Idle);
+            ChangeState(ResolveLocomotionState());
         }
     }
 
+    /// <summary>由动画模块唯一调用；水平移动、动画根位移与重力在此合并。</summary>
+    public Vector3 EvaluateRootMotion(Vector3 animationDelta, float deltaTime)
+    {
+        if (currentState == PlayerState.AirAction && _air != null)
+        { Vector3 airDelta = _air.EvaluateMotion(animationDelta, deltaTime) + _externalMotion; _externalMotion = Vector3.zero; return airDelta; }
+        Vector3 delta = Vector3.zero;
+        if (StateGroup == PlayerStateGroup.Locomotion)
+            delta = locomotion.GetDisplacement(moveInput, currentState == PlayerState.Run || (currentState == PlayerState.Jump && Input.GetKey(KeyCode.LeftShift)), deltaTime);
+        else if (currentState == PlayerState.Attack || currentState == PlayerState.Dodge || currentState == PlayerState.Parry)
+        {
+            delta = animationDelta;
+            delta.y = 0f;
+            if (currentState == PlayerState.Attack) delta = ClampForwardMotion(delta * combat.AttackRootMotionScale);
+        }
+        if (isGrounded && _verticalSpeed <= 0f)
+        {
+            _verticalSpeed = 0f;
+            delta.y = _groundCorrection;
+        }
+        else
+        {
+            _verticalSpeed += gravity * deltaTime;
+            delta.y = _verticalSpeed * deltaTime;
+        }
+        delta += _externalMotion;
+        _externalMotion = Vector3.zero;
+        return delta;
+    }
     // ─── 动画融合 ─────────────────────────────────────
     private void TickAnimatorBlend()
     {
@@ -600,23 +709,38 @@ public class ThirdPersonController : MonoBehaviour
     // ─── 地面检测 ─────────────────────────────────────
     private void CheckGrounded()
     {
-        if (characterCollider == null) { isGrounded = true; return; }
-        Vector3 center = characterCollider.bounds.center;
-        float half = characterCollider.bounds.extents.y;
-        Vector3 origin = center - Vector3.up * (half - 0.1f);
-        isGrounded = Physics.Raycast(origin, Vector3.down, groundCheckDistance, groundLayer);
+        isGrounded = false;
+        _groundCorrection = 0f;
+        if (characterCollider == null || _verticalSpeed > .01f) return;
+        var bounds = characterCollider.bounds;
+        Vector3 origin = new Vector3(bounds.center.x, bounds.min.y + .12f, bounds.center.z);
+        int count = Physics.RaycastNonAlloc(origin, Vector3.down, _groundHits, .12f + groundCheckDistance, groundLayer, QueryTriggerInteraction.Ignore);
+        float closest = float.MaxValue;
+        for (int i = 0; i < count; i++)
+        {
+            var hit = _groundHits[i];
+            if (hit.collider.transform.IsChildOf(transform) || hit.collider.GetComponentInParent<Enemy>() != null || hit.normal.y < .5f || hit.distance >= closest) continue;
+            closest = hit.distance;
+            isGrounded = true;
+            _groundCorrection = .12f - hit.distance;
+        }
     }
 
     // ─── 攻击辅助 ─────────────────────────────────────
 
     /// <summary>延迟 hit detection（仅碰撞检测+伤害，音效和顿帧由 Animation Event 驱动）</summary>
-    private System.Collections.IEnumerator DelayedHitDetection(float delay)
+    private void ScheduleLegacyHit()
+    {
+        if (_delayedHitRoutine != null) StopCoroutine(_delayedHitRoutine);
+        _delayedHitRoutine = StartCoroutine(DelayedHitDetection(_attackHitDelay, combat.AttackToken));
+    }
+
+    private System.Collections.IEnumerator DelayedHitDetection(float delay, int token)
     {
         yield return new WaitForSeconds(delay);
-        combat.PerformHitDetection();
-        // 以下两行配合 Animation Event 使用时可删：
-        // combat.PlayHitSfx();
-        // combat.TriggerHitStop();
+        _delayedHitRoutine = null;
+        if (currentState == PlayerState.Attack && combat.AttackToken == token && combat.IsComboActive)
+            combat.PerformHitDetection();
     }
 
     /// <summary>攻击时转向最近的敌人</summary>

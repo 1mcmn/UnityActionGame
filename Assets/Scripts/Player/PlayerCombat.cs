@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public class PlayerCombat : MonoBehaviour
+public partial class PlayerCombat : MonoBehaviour
 {
     [Header("攻击数据（可选：用 ComboData 资产覆盖下方默认值）")]
     [SerializeField] private ComboData comboData;
@@ -53,20 +53,23 @@ public class PlayerCombat : MonoBehaviour
     private float graceTimer;          // 残响窗口计时（段结束后慢点击续招）
     private float forceExitTimer;
     private int   _comboStep;          // 当前是第几段连击（0=普攻1, 1=普攻2, ...）
-    private bool  _comboWindowOpen;    // 攻击全程（含收刀）允许连击输入
     private bool  _comboBuffered;      // 连击输入已缓冲，窗口内自动接上
 
     // 命中追踪（供 Animation Event 链使用：PerformHitDetection → PlayHitSfx / TriggerHitStop）
     private bool    _hasHitThisSwing;
     private Vector3 _lastHitPoint;
 
-    public bool IsAttacking => attackTimer > 0f;
+    public bool IsAttacking => UsesConfiguredCombo ? _comboRunning : attackTimer > 0f;
 
     /// <summary>攻击进度（0=刚起手，1=收招结束）。供状态机判断取消窗口。</summary>
-    public float AttackProgress01 => AttackDuration > 0.0001f ? 1f - attackTimer / AttackDuration : 1f;
+    public float AttackProgress01 => UsesConfiguredCombo ? ConfiguredProgress : (AttackDuration > 0.0001f ? Mathf.Clamp01(1f - attackTimer / AttackDuration) : 1f);
 
     /// <summary>连击输入缓冲：由状态机在"动画窗口内"调用（窗口外点击会被状态机直接丢弃）。</summary>
-    public void BufferCombo() => _comboBuffered = true;
+    public void BufferCombo()
+    {
+        // 不把窗口前的点击留到窗口内再消费。
+        _comboBuffered = _swingActive && attackTimer > 0f && AttackProgress01 >= ComboWindowStart;
+    }
 
     /// <summary>是否有待消费的连击缓冲（供状态机判断"新起手还是续段"）。</summary>
     public bool HasBufferedCombo => _comboBuffered;
@@ -79,14 +82,10 @@ public class PlayerCombat : MonoBehaviour
     {
         if (!_comboBuffered) return false;
 
-        // 攻击已结束：残响窗口内仍可推进；超时丢弃
-        if (attackTimer <= 0f)
+        if (attackTimer <= 0f || !_swingActive || AttackProgress01 < ComboWindowStart)
         {
-            if (graceTimer <= 0f)
-            {
-                _comboBuffered = false;
-                return false;
-            }
+            _comboBuffered = false;
+            return false;
         }
 
         // 段数钳制：已到最后一段不再推进（防数组越界/触发器空转）
@@ -100,6 +99,7 @@ public class PlayerCombat : MonoBehaviour
         graceTimer = 0f;
         _comboStep++;
         _comboBuffered = false;
+        BeginSwing();
         PlaySwingSfx();
         return true;
     }
@@ -107,17 +107,21 @@ public class PlayerCombat : MonoBehaviour
     public void Initialize()
     {
         currentHealth = maxHealth;
+        InitializeComboRuntime();
     }
 
     // ─── 攻击计时 ──────────────────────────────────
 
     public void StartAttack()
     {
+        if (UsesConfiguredCombo) { StartConfiguredAttack(); return; }
+        if (_swingActive || currentHealth <= 0f) return;
         attackTimer = AttackDuration;
         forceExitTimer = 0f;
         graceTimer = 0f;
         _comboStep = 0;
         _comboBuffered = false;
+        BeginSwing();
         PlaySwingSfx();
     }
 
@@ -160,6 +164,8 @@ public class PlayerCombat : MonoBehaviour
     /// <summary>攻击状态退出时清零所有计时器。</summary>
     public void ResetAllTimers()
     {
+        CancelSwing();
+        _comboRunning = false;
         attackTimer = 0f;
         forceExitTimer = 0f;
         graceTimer = 0f;
@@ -219,6 +225,8 @@ public class PlayerCombat : MonoBehaviour
     /// <summary>Animation Event：执行攻击碰撞检测并造成伤害</summary>
     public void PerformHitDetection()
     {
+        // 已配置连招仅由受控的窗口事件结算；旧动画事件不能叠加伤害。
+        if (UsesConfiguredCombo || !_swingActive || attackTimer <= 0f) return;
         _hasHitThisSwing = false;
         Vector3 origin = transform.position + transform.forward * 1.5f;
 
@@ -226,14 +234,7 @@ public class PlayerCombat : MonoBehaviour
 
         foreach (Collider col in colliders)
         {
-            Enemy enemy = col.GetComponent<Enemy>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(CurrentAttackDamage);
-                _hasHitThisSwing = true;
-                _lastHitPoint = col.transform.position;
-                DamagePopupManager.Instance?.Show(col.bounds.center, CurrentAttackDamage);
-            }
+            ApplySwingDamage(col, CurrentAttackDamage);
         }
 
         // 命中后：播放命中音效 + 顿帧（打击感核心）
@@ -256,32 +257,39 @@ public class PlayerCombat : MonoBehaviour
     public void TriggerHitStop()
     {
         if (!_hasHitThisSwing) return;
-        StartCoroutine(HitStopRoutine());
+        TriggerHitStopForce();
     }
 
     /// <summary>强制触发顿帧（弹刀等非命中场景使用）</summary>
     public void TriggerHitStopForce()
     {
-        StartCoroutine(HitStopRoutine());
+        if (!Application.isPlaying || !isActiveAndEnabled) return;
+        _hitStopUntil = Mathf.Max(_hitStopUntil, Time.realtimeSinceStartup + _hitStopDuration);
+        if (_hitStopRoutine == null) _hitStopRoutine = StartCoroutine(HitStopRoutine());
     }
+
+    private Coroutine _hitStopRoutine;
+    private float _hitStopUntil, _timeScaleBeforeHitStop = 1f;
 
     private System.Collections.IEnumerator HitStopRoutine()
     {
-        float normal = Time.timeScale;
+        _timeScaleBeforeHitStop = Time.timeScale;
         Time.timeScale = _hitStopScale;
-        yield return new WaitForSecondsRealtime(_hitStopDuration);
-        Time.timeScale = normal;
+        while (Time.realtimeSinceStartup < _hitStopUntil) yield return null;
+        Time.timeScale = _timeScaleBeforeHitStop;
+        _hitStopRoutine = null;
     }
 
     public void TakeDamage(float damage, Vector3? attackerPosition = null)
     {
-        if (isInvulnerable) return;
-        currentHealth -= damage;
+        if (isInvulnerable || currentHealth <= 0f || !ComboData.Finite(damage) || damage <= 0f) return;
+        currentHealth = Mathf.Max(0f, currentHealth - damage);
+        ResetAllTimers();
         OnPlayerDamaged?.Invoke(currentHealth);
 
         // 计算受击方向并广播（供动画/状态机选择受击动画）
         int hitType = CalcHitType(attackerPosition);
-        OnPlayerHit?.Invoke(hitType);
+        if (currentHealth > 0f) OnPlayerHit?.Invoke(hitType);
 
         if (currentHealth <= 0f)
         {
@@ -335,15 +343,15 @@ public class PlayerCombat : MonoBehaviour
     /// </summary>
     public bool TryParry(Vector3 origin)
     {
-        Collider[] colliders = Physics.OverlapSphere(origin, _parryRadius, enemyLayer);
+        Collider[] colliders = Physics.OverlapSphere(origin, _parryRadius, enemyLayer, QueryTriggerInteraction.Collide);
         bool hitAny = false;
+        var seen = new System.Collections.Generic.HashSet<EnemyAI>();
 
         foreach (Collider col in colliders)
         {
-            EnemyAI enemyAI = col.GetComponent<EnemyAI>();
-            if (enemyAI != null)
+            EnemyAI enemyAI = col.GetComponentInParent<EnemyAI>();
+            if (enemyAI != null && seen.Add(enemyAI) && enemyAI.TryParry(origin, transform.forward))
             {
-                enemyAI.OnParried(origin);
                 hitAny = true;
                 Debug.Log($"[Combat] 弹反成功！{col.name}");
 

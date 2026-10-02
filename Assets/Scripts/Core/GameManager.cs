@@ -61,6 +61,12 @@ public class GameManager : MonoBehaviour
             StartGame();
     }
 
+    private void OnDestroy()
+    {
+        PlayerCombat.OnPlayerDeath -= OnPlayerDeath;
+        if (Instance == this) Instance = null;
+    }
+
     /// <summary>进入开始界面</summary>
     private void EnterStartScreen()
     {
@@ -203,7 +209,15 @@ public class GameManager : MonoBehaviour
     /// <summary>重新开始（结算按钮 OnClick 绑定）</summary>
     public void Restart()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        var scene = SceneManager.GetActiveScene();
+#if UNITY_EDITOR
+        if (scene.buildIndex < 0)
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(scene.path, new LoadSceneParameters(LoadSceneMode.Single));
+            return;
+        }
+#endif
+        SceneManager.LoadScene(scene.buildIndex >= 0 ? scene.buildIndex : 0);
     }
 
     /// <summary>退出游戏（可选）</summary>
