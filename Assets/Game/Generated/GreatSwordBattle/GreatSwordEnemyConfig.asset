@@ -96,6 +96,13 @@ MonoBehaviour:
   apexHoldTime: 0.65
   maximumAirDuration: 3
   slamSpeed: 8
+  airHitClip: {fileID: 7400000, guid: be5502b606c1b544ca166fd2663895e7, type: 2}
+  airHitBump: 1.5
+  scaleLaunchWithBody: 1
+  downHitClip: {fileID: 7400000, guid: ef797d8a8e01dec45881ed47911ff564, type: 2}
+  downDamageMultiplier: 1.25
+  downHitExtend: 0.35
+  downExtendCap: 2
   detectRadius: 12
   closeRadius: 5
   attackRadius: 1.75

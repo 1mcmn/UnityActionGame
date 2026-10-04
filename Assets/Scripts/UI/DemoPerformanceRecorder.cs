@@ -165,7 +165,7 @@ public sealed class DemoPerformanceRecorder : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!showOverlay) return;
+        if (!showOverlay || (BattleHUD.StyledActive && !BattleHUD.DebugVisible && !IsRecording)) return;
         if (_labelStyle == null)
             _labelStyle = new GUIStyle(GUI.skin.label) { wordWrap = true, fontSize = 14 };
         float width = Mathf.Min(350f, Screen.width - 24f);

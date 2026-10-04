@@ -17,6 +17,7 @@ public sealed class NativeDiscCarousel : MonoBehaviour
     public NativeMenuAssets assets;
     public Transform discContainer;
     public NativeMenuAudio menuAudio;
+    public NativeDiscPath path;
     public event Action<int, int> SelectionChanged;
     public int Selection { get; private set; }
     public float Position => position;
@@ -53,11 +54,13 @@ public sealed class NativeDiscCarousel : MonoBehaviour
     {
         if (!InputEnabled || discs.Count == 0) return;
         int next = Wrap(index), direction = next >= Selection ? 1 : -1;
-        ClearInk(); ResetHover(); move.Stop(); Selection = next; SelectionChanged?.Invoke(next, direction); menuAudio.Tick(confirm);
+        ClearInk(); ResetHover(); move.Stop(); Selection = next; SelectionChanged?.Invoke(next, direction);
+        UiSfx.Play(confirm ? UiSfx.Cue.Confirm : UiSfx.Cue.DiscStep);
         if (assets.reduceMotion || Mathf.Abs(position - next) < .001f)
         { position = next; Draw(); if (confirm) Confirm(); return; }
         move = Tween.Custom(this, position, (float)next, assets.carouselDuration, (target, value) => { target.position = value; target.Draw(); }, Ease.OutQuart, useUnscaledTime: true);
         if (confirm) move.OnComplete(this, target => target.Confirm());
+        else move.OnComplete(this, target => UiSfx.Play(UiSfx.Cue.DiscLand));
     }
     public void Step(int direction) => Select(Selection + direction);
     public void Wheel(float delta)
@@ -114,8 +117,14 @@ public sealed class NativeDiscCarousel : MonoBehaviour
     }
     public void Click(Vector2 screenPoint)
     {
-        int hit = Hit(screenPoint); if (hit >= 0) Select(hit, true);
+        int hit = Hit(screenPoint); if (hit < 0) return;
+        // 点正中已落定的光盘＝进入（空白盘由控制器转为新建存档）；点两侧光盘只是转过来。
+        if (hit == Selection && Mathf.Abs(position - Selection) < .1f) Activate();
+        else Select(hit);
     }
+    /// <summary>请求进入当前选中光盘；由菜单控制器决定进入战斗或新建存档。</summary>
+    public event Action Activated;
+    public void Activate() { if (InputEnabled && discs.Count > 0) Activated?.Invoke(); }
     public int Hit(Vector2 screenPoint)
     {
         Ray ray = ui.menuCamera.ScreenPointToRay(screenPoint); int result = -1; float nearest = float.MaxValue;
@@ -161,10 +170,40 @@ public sealed class NativeDiscCarousel : MonoBehaviour
                 float dy = Mathf.Max(0, area.yMin + 24 - bounds.yMin) - Mathf.Max(0, bounds.yMax - area.yMax + 24);
                 disc.root.position += new Vector3(dx, dy, 0) * u / factor;
             }
-            disc.alpha = Mathf.Clamp01((2.55f - Mathf.Abs(offset)) / .45f); disc.renderer.enabled = disc.alpha > .02f && gameObject.activeInHierarchy;
-            disc.renderer.sortingOrder = Mathf.RoundToInt(depth + 300);
+            disc.alpha = Mathf.Clamp01((2.55f - Mathf.Abs(offset)) / .45f);
+            ApplyLaunch(i, disc);
+            disc.renderer.enabled = disc.alpha > .02f && gameObject.activeInHierarchy;
+            disc.renderer.sortingOrder = launchStart >= 0 && i == Selection ? 1000 : Mathf.RoundToInt(depth + 300);
             disc.renderer.GetPropertyBlock(block); block.SetColor("_Color", new Color(1, 1, 1, disc.alpha)); disc.renderer.SetPropertyBlock(block);
         }
+        UpdatePath();
+    }
+
+    private readonly List<Vector2> pathPoints = new List<Vector2>();
+    private readonly Vector2[] ringPoints = new Vector2[48];
+    /// <summary>把可见光盘中心（两端外延）与选中光盘外圈的旋转虚线点交给背景连线绘制。</summary>
+    private void UpdatePath()
+    {
+        if (path == null || !path.isActiveAndEnabled || Selection >= discs.Count) return;
+        pathPoints.Clear();
+        for (int i = 0; i < discs.Count; i++)
+            if (discs[i].alpha > .02f) pathPoints.Add(ui.menuCamera.WorldToScreenPoint(discs[i].root.position));
+        if (pathPoints.Count >= 2)
+        {
+            pathPoints.Insert(0, pathPoints[0] + (pathPoints[0] - pathPoints[1]) * .9f);
+            int n = pathPoints.Count; pathPoints.Add(pathPoints[n - 1] + (pathPoints[n - 1] - pathPoints[n - 2]) * .9f);
+        }
+        Transform root = discs[Selection].root;
+        float spin = assets.reduceMotion ? 0 : Time.unscaledTime * .35f, since = Time.unscaledTime - confirmedAt;
+        float radius = .58f + (since < .45f && !assets.reduceMotion ? Mathf.Sin(since / .45f * Mathf.PI) * .07f : 0);
+        for (int k = 0; k < ringPoints.Length; k++)
+        {
+            float angle = k * Mathf.PI * 2 / ringPoints.Length + spin;
+            ringPoints[k] = ui.menuCamera.WorldToScreenPoint(root.TransformPoint(new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0)));
+        }
+        // 切换途中环淡出，落定后淡入，避免环在两张光盘之间“漂移”。
+        float launch = LaunchProgress;
+        path.SetShape(launch > 0 ? System.Array.Empty<Vector2>() : pathPoints.ToArray(), ringPoints, Mathf.Clamp01(1 - Mathf.Abs(position - Selection) * 2.5f) * (1 - Mathf.Clamp01(launch * 3)));
     }
     private Rect Bounds(Transform root)
     {
@@ -176,47 +215,29 @@ public sealed class NativeDiscCarousel : MonoBehaviour
         }
         return Rect.MinMaxRect(low.x, low.y, high.x, high.y);
     }
+    // 进入战斗的光盘推进：选中光盘边旋转边转正、朝镜头放大直至铺满，其余光盘与连线淡出，随后由转场幕布接管。
+    private float launchStart = -1, launchDuration = .7f;
+    private float LaunchProgress => launchStart < 0 ? 0 : Mathf.Clamp01((Time.unscaledTime - launchStart) / launchDuration);
+    public void Launch(float duration) { launchDuration = Mathf.Max(.01f, duration); launchStart = Time.unscaledTime; InputEnabled = false; ResetHover(); }
+    public void ResetLaunch() { launchStart = -1; Draw(); }
+    private void ApplyLaunch(int index, Disc disc)
+    {
+        float p = LaunchProgress; if (p <= 0) return;
+        float e = p * p * (3 - 2 * p);
+        if (index != Selection) { disc.alpha *= 1 - Mathf.Clamp01(p * 2.5f); return; }
+        Transform cam = ui.menuCamera.transform;
+        disc.root.position = Vector3.Lerp(disc.root.position, cam.position + cam.forward * 520 * ui.Unit, e * e);
+        disc.root.rotation = Quaternion.Slerp(disc.root.rotation, cam.rotation, e) * Quaternion.AngleAxis(-e * 720, Vector3.forward);
+        disc.root.localScale *= Mathf.Lerp(1, 1.6f, e);
+    }
+
     public Rect[] VisibleBounds()
     {
         var result = new List<Rect>(); foreach (Disc d in discs) if (d.alpha > .02f) result.Add(Bounds(d.root)); return result.ToArray();
     }
-    private void Confirm()
-    {
-        if (!gameObject.activeInHierarchy || Selection >= discs.Count) return;
-        ClearInk(); Transform root = discs[Selection].root;
-        for (int layer = 0; layer < 3; layer++)
-        {
-            var points = new List<Vector2>(); float start = (-146 + layer * 13) * Mathf.Deg2Rad;
-            float sweep = (layer == 0 ? 334 : layer == 1 ? 306 : 246) * Mathf.Deg2Rad;
-            float r = .5f + (Mathf.Min(9, discs[Selection].diameter / ui.Unit * .022f) + layer * 2.2f) * ui.Unit / root.localScale.x;
-            var samples = new Vector2[65];
-            for (int i = 0; i < samples.Length; i++)
-            {
-                float angle = start + i / 64f * sweep;
-                float wobble = (Mathf.Sin(angle * 3 + layer * 1.7f) * .8f + Mathf.Cos(angle * 5 - layer) * .45f) * ui.Unit / root.localScale.x;
-                Vector3 world = root.TransformPoint(new Vector3(Mathf.Cos(angle) * (r + wobble), -Mathf.Sin(angle) * (r + wobble), 0));
-                Vector2 screen = ui.menuCamera.WorldToScreenPoint(world);
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(ui.ink[layer].rectTransform, screen, ui.menuCamera, out samples[i]);
-            }
-            for (int i = 0; i < 64; i++)
-            {
-                Vector2 a = samples[Mathf.Max(0, i - 1)], b = samples[i], c = samples[i + 1], d = samples[Mathf.Min(64, i + 2)];
-                for (int j = 0; j < 4; j++)
-                {
-                    float t = j / 4f;
-                    points.Add(.5f * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t));
-                }
-            }
-            points.Add(samples[64]); ui.ink[layer].path = points.ToArray(); ui.ink[layer].progress = assets.reduceMotion ? 1 : 0; ui.ink[layer].SetVerticesDirty();
-        }
-        ui.inkGroup.alpha = 1;
-        float drawEnd = assets.inkDrawDuration + assets.inkStagger * 2, fadeStart = drawEnd + assets.inkHold, total = fadeStart + assets.inkFade;
-        confirmation = Tween.Custom(this, 0f, total, assets.reduceMotion ? .7f : total, (target, time) => {
-            if (target.assets.reduceMotion) return;
-            for (int i = 0; i < 3; i++) { target.ui.ink[i].progress = Mathf.Clamp01((time - i * target.assets.inkStagger) / target.assets.inkDrawDuration); target.ui.ink[i].SetVerticesDirty(); }
-            float t = Mathf.Clamp01((time - fadeStart) / target.assets.inkFade); target.ui.inkGroup.alpha = 1 - t * t * t;
-        }, Ease.Linear, useUnscaledTime: true).OnComplete(this, target => target.ui.inkGroup.alpha = 0);
-    }
+    // 确认反馈：旧手绘描线已移除，改为选中虚线环向外扩张后回落（见 UpdatePath）。
+    private float confirmedAt = -9;
+    private void Confirm() { if (gameObject.activeInHierarchy && Selection < discs.Count) confirmedAt = Time.unscaledTime; }
     private void OnDisable() { StopMotion(); foreach (Disc d in discs) { d.hover.Stop(); if (d.renderer != null) d.renderer.enabled = false; } }
     private void OnDestroy() { StopMotion(); foreach (Disc d in discs) d.hover.Stop(); }
 }

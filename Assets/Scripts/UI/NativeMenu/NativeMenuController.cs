@@ -39,11 +39,13 @@ public sealed class NativeMenuController : MonoBehaviour
         for (int i = 0; i < ui.volumes.Length; i++)
         {
             int channel = i; ui.volumes[i].SetValueWithoutNotify(menuAudio.Get(i)); ui.volumeValues[i].text = Mathf.RoundToInt(menuAudio.Get(i) * 100).ToString();
-            ui.volumes[i].onValueChanged.AddListener(value => { menuAudio.Set(channel, value); ui.volumeValues[channel].text = Mathf.RoundToInt(value * 100).ToString(); ui.wave.amplitude = menuAudio.Get(0); ui.wave.SetVerticesDirty(); menuAudio.Tick(); });
+            ui.volumes[i].onValueChanged.AddListener(value => { menuAudio.Set(channel, value); ui.volumeValues[channel].text = Mathf.RoundToInt(value * 100).ToString(); ui.wave.amplitude = menuAudio.Get(0); ui.wave.SetVerticesDirty(); UiSfx.Play(UiSfx.Cue.Slider, .8f + value * .6f); Punch(ui.volumeValues[channel].transform); });
         }
-        ui.surface.carousel = carousel; carousel.SelectionChanged += ChangedSelection;
+        ui.surface.carousel = carousel; carousel.SelectionChanged += ChangedSelection; carousel.Activated += EnterBattle;
         heroInstance = new Material(assets.heroMaterial); ui.blade.GetComponent<UnityEngine.UI.RawImage>().material = heroInstance;
         Saves = new NativeMenuSaves(); ui.saveStatus.text = Saves.Status;
+        BuildIndicator(); BuildDiscPath();
+        var scrollHint = ui.continueButton.transform.Find("ScrollHint"); if (scrollHint != null) scrollHint.GetComponent<TMPro.TMP_Text>().text = "滚轮 / 两侧光盘切换 · 点击中间光盘进入   ← → / ENTER";
         Resize(); carousel.Rebuild(Saves.Records, 0); Show("main");
         ui.wave.amplitude = menuAudio.Get(0); ui.wave.SetVerticesDirty();
     }
@@ -53,6 +55,7 @@ public sealed class NativeMenuController : MonoBehaviour
         if (size != lastSize) Resize();
         if (Input.GetKeyDown(KeyCode.Escape) && !Loading) { if (Creating) CancelCreate(); else if (ScreenName != "main") Back(); }
         if (Input.GetKeyDown(KeyCode.Tab)) CycleFocus(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? -1 : 1);
+        UpdateIndicator();
         if (!layoutReady || assets.reduceMotion) return;
         Vector2 target = new Vector2(Input.mousePosition.x / Mathf.Max(1, size.x) * 2 - 1, Input.mousePosition.y / Mathf.Max(1, size.y) * 2 - 1);
         if (target.x < -1 || target.x > 1 || target.y < -1 || target.y > 1 || !Application.isFocused) target = Vector2.zero;
@@ -92,8 +95,10 @@ public sealed class NativeMenuController : MonoBehaviour
     public void Back() { if (!Loading && !Creating && !transition.isAlive) Navigate("main"); }
     private void Navigate(string screen)
     {
-        menuAudio.Tick(true); carousel.InputEnabled = false;
+        bool back = screen == "main";
+        UiSfx.Play(back ? UiSfx.Cue.Back : UiSfx.Cue.Confirm); carousel.InputEnabled = false;
         if (assets.reduceMotion) { Show(screen); return; }
+        UiSfx.Play(back ? UiSfx.Cue.TransitionBack : UiSfx.Cue.Transition);
         ui.flashGroup.alpha = 1; ui.flash.localRotation = Quaternion.Euler(0, 0, -14);
         float width = ui.Viewport.x * ui.Unit; ui.flash.anchoredPosition = new Vector2(-width, 0);
         transition = Tween.Custom(this, -width, width * .2f, .2f, (target, x) => target.ui.flash.anchoredPosition = new Vector2(x, 0), Ease.InCubic, useUnscaledTime: true)
@@ -110,6 +115,7 @@ public sealed class NativeMenuController : MonoBehaviour
         ui.artPanel.gameObject.SetActive(screen != "saves");
         var artGroup = ui.artPanel.GetComponent<CanvasGroup>(); if (artGroup != null) artGroup.alpha = screen == "main" ? 1 : .12f;
         carousel.gameObject.SetActive(screen == "saves"); carousel.InputEnabled = screen == "saves" && !Loading;
+        if (carousel.path != null) carousel.path.gameObject.SetActive(screen == "saves");
         detailsMotion.Stop(); ApplyDetails(carousel.Selection); RestoreDetails();
         UnityEngine.UI.Selectable focus = screen == "main" ? ui.mainButtons[lastMain] : screen == "saves" ? ui.surface : screen == "settings" ? (UnityEngine.UI.Selectable)ui.backSettings : ui.backQuit;
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(focus.gameObject);
@@ -156,11 +162,11 @@ public sealed class NativeMenuController : MonoBehaviour
     {
         if (Loading || Creating || ScreenName != "saves") return;
         carousel.InputEnabled = false; carousel.StopMotion(); ui.modalPanel.gameObject.SetActive(true); ui.createError.text = "";
-        ui.nameInput.SetTextWithoutNotify(""); ui.nameInput.ActivateInputField(); EventSystem.current.SetSelectedGameObject(ui.nameInput.gameObject); menuAudio.Tick(true);
+        ui.nameInput.SetTextWithoutNotify(""); ui.nameInput.ActivateInputField(); EventSystem.current.SetSelectedGameObject(ui.nameInput.gameObject); UiSfx.Play(UiSfx.Cue.Open);
     }
     public void CancelCreate()
     {
-        ui.modalPanel.gameObject.SetActive(false); carousel.InputEnabled = ScreenName == "saves" && !Loading;
+        UiSfx.Play(UiSfx.Cue.Close); ui.modalPanel.gameObject.SetActive(false); carousel.InputEnabled = ScreenName == "saves" && !Loading;
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(ui.newSave.gameObject);
     }
     public void CreateSave()
@@ -171,7 +177,7 @@ public sealed class NativeMenuController : MonoBehaviour
             Saves.Create(ui.nameInput.text); ui.saveStatus.text = Saves.Status; ui.modalPanel.gameObject.SetActive(false); carousel.InputEnabled = true;
             carousel.Rebuild(Saves.Records, Saves.Records.Count - 1); carousel.ConfirmSelection(); EventSystem.current.SetSelectedGameObject(ui.surface.gameObject);
         }
-        catch (ArgumentException error) { ui.createError.text = error.Message; ui.nameInput.ActivateInputField(); }
+        catch (ArgumentException error) { UiSfx.Play(UiSfx.Cue.Error); Punch(ui.createError.transform); ui.createError.text = error.Message; ui.nameInput.ActivateInputField(); }
     }
     public void EnterBattle()
     {
@@ -179,12 +185,20 @@ public sealed class NativeMenuController : MonoBehaviour
         if (carousel.Selection >= Saves.Records.Count) { OpenCreate(); return; }
         StartCoroutine(LoadBattle());
     }
+    // 进入战斗：光盘推进 → 幕布扫入（显示真实载入进度）→ 异步载入 → 战斗场景就绪后揭幕（见 BeginLoadedBattle）。
     private IEnumerator LoadBattle()
     {
-        Loading = true; ui.continueButton.interactable = ui.newSave.interactable = false;
+        Loading = true; ui.continueButton.interactable = ui.newSave.interactable = false; UiSfx.Play(UiSfx.Cue.Start);
         carousel.ConfirmSelection(); carousel.InputEnabled = false; ui.saveStatus.text = "正在加载战场…";
         while (carousel.Moving) yield return null;
-        yield return new WaitForSecondsRealtime(assets.reduceMotion ? 0 : .65f);
+        var panel = ui.savesPanel.GetComponent<CanvasGroup>(); if (panel == null) panel = ui.savesPanel.gameObject.AddComponent<CanvasGroup>();
+        if (!assets.reduceMotion)
+        {
+            carousel.Launch(.7f);
+            for (float t = 0; t < .45f; t += Time.unscaledDeltaTime) { panel.alpha = 1 - Mathf.Clamp01(t / .3f); yield return null; }
+        }
+        var cover = SceneTransition.Begin(assets);
+        while (!cover.Covered) yield return null;
         PlayerPrefs.Save(); AsyncOperation operation = null;
         try
         {
@@ -197,8 +211,14 @@ public sealed class NativeMenuController : MonoBehaviour
                 operation = SceneManager.LoadSceneAsync(gameplayScenePath, LoadSceneMode.Single);
         }
         catch (Exception error) { Debug.LogError("[原生菜单] 战场加载失败：" + error.Message, this); }
-        if (operation != null) yield break;
+        if (operation != null)
+        {
+            // 菜单场景卸载后协程随之结束，最终进度由揭幕时补满。
+            while (!operation.isDone) { cover.SetProgress(operation.progress / .9f); yield return null; }
+            yield break;
+        }
         SceneManager.sceneLoaded -= BeginLoadedBattle; pendingScene = null; Loading = false;
+        cover.Abort(); carousel.ResetLaunch(); panel.alpha = 1;
         ui.saveStatus.text = "加载失败，请检查构建场景。"; ui.continueButton.interactable = ui.newSave.interactable = true; carousel.InputEnabled = true;
     }
     private static void BeginLoadedBattle(Scene scene, LoadSceneMode mode)
@@ -206,8 +226,9 @@ public sealed class NativeMenuController : MonoBehaviour
         if (scene.path != pendingScene) return;
         SceneManager.sceneLoaded -= BeginLoadedBattle; pendingScene = null;
         foreach (var root in scene.GetRootGameObjects())
-        { var manager = root.GetComponentInChildren<GameManager>(true); if (manager != null) { manager.StartGame(); return; } }
+        { var manager = root.GetComponentInChildren<GameManager>(true); if (manager != null) { manager.StartGame(); if (SceneTransition.Instance != null) SceneTransition.Instance.Reveal(); return; } }
         Debug.LogError("[原生菜单] 战斗场景缺少 GameManager。");
+        if (SceneTransition.Instance != null) SceneTransition.Instance.Reveal();
     }
     private void CycleFocus(int direction)
     {
@@ -228,5 +249,50 @@ public sealed class NativeMenuController : MonoBehaviour
 #endif
     }
     private void OnDisable() { transition.Stop(); detailsMotion.Stop(); if (carousel != null) carousel.StopMotion(); }
-    private void OnDestroy() { if (carousel != null) carousel.SelectionChanged -= ChangedSelection; if (heroInstance != null) Destroy(heroInstance); PlayerPrefs.Save(); }
+
+    /// <summary>数值或提示更新时的轻微放大回弹，与音效同拍。</summary>
+    private void Punch(Transform target)
+    {
+        if (assets.reduceMotion || target == null) return;
+        Tween.Custom(target, 1.18f, 1f, .2f, (t, s) => t.localScale = new Vector3(s, s, 1), Ease.OutCubic, useUnscaledTime: true);
+    }
+
+    // 主菜单选中指示点：参考 METAPHOR 选中项右侧的小圆点，随悬停/键盘焦点滑动到当前项，换项时放大一下。
+    private RectTransform indicator;
+    private UnityEngine.UI.Selectable indicatorTarget;
+    private float indicatorPunch;
+    private void BuildIndicator()
+    {
+        var dot = new GameObject("SelectionIndicator", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+        indicator = (RectTransform)dot.transform; indicator.SetParent(ui.mainPanel, false); dot.layer = ui.mainPanel.gameObject.layer;
+        var image = dot.GetComponent<UnityEngine.UI.Image>(); image.color = assets.ink; image.raycastTarget = false;
+        indicator.anchorMin = indicator.anchorMax = indicator.pivot = new Vector2(.5f, .5f);
+        indicator.sizeDelta = new Vector2(9, 9) * ui.Unit; indicator.localRotation = Quaternion.Euler(0, 0, 45);
+    }
+    private void UpdateIndicator()
+    {
+        if (indicator == null || ScreenName != "main") return;
+        var active = NativeMenuButton.Active != null ? NativeMenuButton.Active.GetComponent<UnityEngine.UI.Selectable>() : null;
+        if (Array.IndexOf(ui.mainButtons, active) < 0) active = ui.mainButtons[lastMain];
+        if (active != indicatorTarget) { indicatorTarget = active; indicatorPunch = 1; }
+        var rect = (RectTransform)active.transform; Rect r = rect.rect;
+        Vector3 goal = rect.TransformPoint(new Vector3(r.xMax + 18 * ui.Unit, r.center.y, 0));
+        float k = 1 - Mathf.Exp(-(assets.reduceMotion ? 60 : 16) * Time.unscaledDeltaTime);
+        indicator.position = Vector3.Lerp(indicator.position, goal, k);
+        indicatorPunch = Mathf.Max(0, indicatorPunch - Time.unscaledDeltaTime * 4);
+        float s = 1 + .6f * indicatorPunch * indicatorPunch; indicator.localScale = new Vector3(s, s, 1);
+        indicator.sizeDelta = new Vector2(9, 9) * ui.Unit;
+    }
+
+    // 存档页光盘之间的连线与选中光盘的旋转虚线环，画在背景画布上，从光盘背后穿过。
+    private void BuildDiscPath()
+    {
+        if (ui.floor == null) return;
+        var host = new GameObject("DiscPath", typeof(RectTransform), typeof(CanvasRenderer), typeof(NativeDiscPath));
+        var rect = (RectTransform)host.transform; rect.SetParent(ui.floor.transform.parent, false); host.layer = ui.floor.gameObject.layer;
+        rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = rect.offsetMax = Vector2.zero;
+        var path = host.GetComponent<NativeDiscPath>(); path.raycastTarget = false; path.color = assets.ink;
+        path.eventCamera = ui.menuCamera; carousel.path = path; host.SetActive(false);
+    }
+    private void OnDestroy() { if (carousel != null) { carousel.SelectionChanged -= ChangedSelection; carousel.Activated -= EnterBattle; } if (heroInstance != null) Destroy(heroInstance); PlayerPrefs.Save(); }
 }

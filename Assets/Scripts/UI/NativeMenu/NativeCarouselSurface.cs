@@ -13,5 +13,5 @@ public sealed class NativeCarouselSurface : UnityEngine.UI.Selectable, IScrollHa
     public void OnDrag(PointerEventData e) { if (!dragged && carousel != null && carousel.InputEnabled && Mathf.Abs(e.position.x - start.x) >= 65) { dragged = true; carousel.Step(e.position.x < start.x ? 1 : -1); } }
     public void OnEndDrag(PointerEventData e) { }
     public override void OnMove(AxisEventData e) { if (carousel != null && carousel.InputEnabled && (e.moveDir == MoveDirection.Left || e.moveDir == MoveDirection.Right)) { carousel.Step(e.moveDir == MoveDirection.Right ? 1 : -1); e.Use(); } else base.OnMove(e); }
-    public void OnSubmit(BaseEventData e) { if (carousel != null && carousel.InputEnabled) carousel.ConfirmSelection(); }
+    public void OnSubmit(BaseEventData e) { if (carousel != null && carousel.InputEnabled) carousel.Activate(); }
 }

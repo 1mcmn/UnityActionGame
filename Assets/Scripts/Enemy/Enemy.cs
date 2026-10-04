@@ -161,6 +161,8 @@ public class Enemy : MonoBehaviour
 
         // 减伤：僵直条满之前伤害减免
         float actualDamage = (IsKnockedDown || (_swordBrain != null && _swordBrain.IsBroken)) ? damage : damage * (1f - _damageReduction);
+        // 倒地压制期追打加成（大剑敌人配置）；挑飞那一击同样处于倒地，也会吃到加成。
+        if (_swordBrain != null && _swordBrain.IsDowned) actualDamage *= _swordBrain.Config.downDamageMultiplier;
         _currentHealth = Mathf.Max(0, _currentHealth - actualDamage);
         _isDead = _currentHealth <= 0;
 

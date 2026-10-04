@@ -31,6 +31,22 @@ public class EnemyConfig : ScriptableObject
     [Min(0)] public float apexHoldTime = .65f;
     [Min(.1f)] public float maximumAirDuration = 3f;
     [Min(.1f)] public float slamSpeed = 8f;
+    [Tooltip("空中被追击命中时的受击动画；为空时回退为重播浮空动画")]
+    public AnimationClip airHitClip;
+    [Tooltip("空中受击时向上补的速度（米/秒），制造追打感")]
+    [Min(0)] public float airHitBump = 1.5f;
+    [Tooltip("浮空高度按体型缩放的开方倍率放大，放大的敌人不会显得飞不高")]
+    public bool scaleLaunchWithBody = true;
+
+    [Header("倒地压制（破防后不挑飞时）")]
+    [Tooltip("倒地期间被追打的受击片段；为空时只闪白，不播动作")]
+    public AnimationClip downHitClip;
+    [Tooltip("倒地期间所受伤害倍率")]
+    [Min(1)] public float downDamageMultiplier = 1.25f;
+    [Tooltip("每次倒地追打延长的压制时间（秒）")]
+    [Min(0)] public float downHitExtend = .35f;
+    [Tooltip("单次破防内追打最多累计延长的时间（秒）")]
+    [Min(0)] public float downExtendCap = 2f;
 
     [Header("检测范围")]
     public float detectRadius  = 10f;

@@ -1,0 +1,52 @@
+界面音效来源（均为 CC0，可商用，无需署名）：
+- Kenney Interface Sounds 1.0  https://kenney.nl/assets/interface-sounds
+- Kenney UI Audio (UI SFX Set)  https://kenney.nl/assets/ui-audio
+
+文件对应：ui_hover=rollover2, ui_move=select_002, ui_confirm=confirmation_004, ui_back=back_002, ui_open=maximize_009, ui_close=minimize_009, ui_error=error_008, ui_slider=tick_004, ui_disc_land=glass_006, ui_start=maximize_006, hud_reject=error_004, hud_toast=pluck_002, hud_suppress=bong_001
+转场、光盘滚动、确认尾音、开始上升音为 UiSfx.cs 程序化合成。
+
+===== Kenney Interface Sounds License =====
+	
+
+	Interface Sounds (1.0)
+
+	Created/distributed by Kenney (www.kenney.nl)
+	Creation date: 11-02-2020
+
+			------------------------------
+
+	License: (Creative Commons Zero, CC0)
+	http://creativecommons.org/publicdomain/zero/1.0/
+
+	This content is free to use in personal, educational and commercial projects.
+	Support us by crediting Kenney or www.kenney.nl (this is not mandatory)
+
+			------------------------------
+
+	Donate:   http://support.kenney.nl
+	Patreon:  http://patreon.com/kenney/
+
+	Follow on Twitter for updates:
+	http://twitter.com/KenneyNL
+===== Kenney UI Audio License =====
+	
+
+	UI SFX Set
+
+	by  Kenney Vleugels (Kenney.nl)
+
+			------------------------------
+
+	License (Creative Commons Zero, CC0)
+	http://creativecommons.org/publicdomain/zero/1.0/
+
+	You may use these assets in personal and commercial projects.
+	Credit (Kenney or www.kenney.nl) would be nice but is not mandatory.
+
+			------------------------------
+
+	Donate:   http://support.kenney.nl
+	Request:  http://request.kenney.nl
+
+	Follow on Twitter for updates:
+	@KenneyNL

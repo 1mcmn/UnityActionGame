@@ -234,6 +234,7 @@ public class ThirdPersonController : MonoBehaviour
 
     private void Update()
     {
+        if (GamePause.IsPaused) return; // 暂停时不读输入、不推进状态机
         ReadInput();
         TickInputBuffers();
         combat.ApplyPendingReloadIfSafe();

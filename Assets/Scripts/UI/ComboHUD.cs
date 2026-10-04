@@ -15,7 +15,7 @@ public class ComboHUD : MonoBehaviour
 
     private void OnGUI()
     {
-        if (player == null || !player.gameObject.activeInHierarchy) return;
+        if (player == null || !player.gameObject.activeInHierarchy || (BattleHUD.StyledActive && !BattleHUD.DebugVisible)) return;
         if (_label == null)
         {
             _label = new GUIStyle(GUI.skin.label) { fontSize = 15, wordWrap = true };

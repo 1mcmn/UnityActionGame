@@ -7,16 +7,14 @@ public sealed class NativeMenuAudio : MonoBehaviour
     public const string MusicKey = "Menu.MusicVolume";
     public const string EffectsKey = "Menu.SfxVolume";
     public static float EffectsVolume => Mathf.Clamp01(PlayerPrefs.GetFloat(EffectsKey, 1));
-    private AudioSource music, effects;
-    private AudioClip ambient, tick, confirm;
+    private AudioSource music;
+    private AudioClip ambient;
 
     private void Awake()
     {
-        music = gameObject.AddComponent<AudioSource>(); effects = gameObject.AddComponent<AudioSource>();
-        music.playOnAwake = effects.playOnAwake = false; music.loop = true;
+        music = gameObject.AddComponent<AudioSource>();
+        music.playOnAwake = false; music.loop = true;
         ambient = MakeClip("MenuAmbient", 4f, false, false);
-        tick = MakeClip("MenuTick", .07f, true, false);
-        confirm = MakeClip("MenuConfirm", .13f, true, true);
         music.clip = ambient; Apply(); music.Play();
     }
     public float Get(int channel) => Mathf.Clamp01(PlayerPrefs.GetFloat(channel == 0 ? MasterKey : channel == 1 ? MusicKey : EffectsKey, 1));
@@ -30,12 +28,9 @@ public sealed class NativeMenuAudio : MonoBehaviour
     {
         AudioListener.volume = Get(0);
         if (music != null) music.volume = Get(1) * .15f;
-        if (effects != null) effects.volume = Get(2) * .24f;
     }
-    public void Tick(bool strong = false)
-    {
-        if (effects != null) effects.PlayOneShot(strong ? confirm : tick);
-    }
+    /// <summary>兼容入口：具体交互请直接调用 UiSfx.Play 选择对应音效。</summary>
+    public void Tick(bool strong = false) => UiSfx.Play(strong ? UiSfx.Cue.Confirm : UiSfx.Cue.Move);
     private static AudioClip MakeClip(string name, float seconds, bool transient, bool strong)
     {
         const int rate = 22050;
@@ -52,6 +47,6 @@ public sealed class NativeMenuAudio : MonoBehaviour
     }
     private void OnDestroy()
     {
-        if (ambient != null) Destroy(ambient); if (tick != null) Destroy(tick); if (confirm != null) Destroy(confirm);
+        if (ambient != null) Destroy(ambient);
     }
 }

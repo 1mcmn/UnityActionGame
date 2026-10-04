@@ -56,6 +56,94 @@ public static class GreatSwordBattleSetup
         Debug.Log("[大剑战斗] 当前场景接线完成，请保存场景。已有配置数值保留。");
     }
 
+    [MenuItem("Tools/大剑战斗/应用压制期调整（浮空+倒地，体型1.1）")]
+    public static void ApplySuppressionUpdate()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("请先退出运行模式。");
+        var scene = SceneManager.GetActiveScene();
+        if (scene.isDirty) throw new InvalidOperationException("当前场景有未保存修改；保留现场，先保存后再应用。");
+        AddAirHitClip();
+        ExpandAirStrike();
+        var downHit = CleanClip("DownHit", "KnockDown_Front_Damage");
+        foreach (var path in AssetDatabase.FindAssets("t:EnemyConfig").Select(AssetDatabase.GUIDToAssetPath))
+        {
+            var config = AssetDatabase.LoadAssetAtPath<EnemyConfig>(path);
+            if (config == null || !config.greatSwordEnabled || config.downHitClip != null) continue;
+            Undo.RecordObject(config, "补充倒地受击动画"); config.downHitClip = downHit; EditorUtility.SetDirty(config);
+        }
+        AssetDatabase.SaveAssets();
+        // 攻击判定按 1 倍体型标定；把放大的敌人整体缩回 1.1 倍，视觉与判定一致。只改最上层的非 1 缩放节点。
+        int scaled = 0;
+        foreach (var brain in scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<GreatSwordEnemyBrain>(true)))
+        {
+            float current = brain.transform.lossyScale.y;
+            if (Mathf.Abs(current - EnemyBodyScale) < .01f) continue;
+            Transform node = null;
+            for (var t = brain.transform; t != null; t = t.parent) if (t.localScale != Vector3.one) node = t;
+            if (node == null) node = brain.transform;
+            Undo.RecordObject(node, "调整敌人体型");
+            node.localScale *= EnemyBodyScale / current;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(node); scaled++;
+        }
+        if (scaled > 0) { EditorSceneManager.MarkSceneDirty(scene); if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("场景保存失败。"); }
+        Debug.Log($"[大剑战斗] 压制期调整完成：浮空受击/倒地受击动画已写入配置，空中三连已检查，{scaled} 个敌人缩放为 {EnemyBodyScale} 倍并保存 {scene.path}。");
+    }
+    private const float EnemyBodyScale = 1.1f;
+
+    [MenuItem("Tools/大剑战斗/扩展空中三连")]
+    public static void ExpandAirStrike()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("请先退出运行模式。");
+        var settings = AssetDatabase.LoadAssetAtPath<AirChainSettings>(Folder + "/AirChainSettings.asset");
+        var data = settings != null ? settings.airStrikeCombo : null;
+        if (data == null) throw new InvalidOperationException("缺少空中追击资产，请先执行 Tools/大剑战斗/配置当前演示场景。");
+        if (data.steps.Count >= 3) { Selection.activeObject = data; Debug.Log("[大剑战斗] 空中连斩已有 " + data.steps.Count + " 段，保留现有配置。"); return; }
+        Undo.RecordObject(data, "扩展空中三连");
+        // 原单段（Combo_2）保留为第 2 段，只补接段窗口；前后补 Combo_1 与 Combo_3，最后一段为砸地终结。
+        var middle = data.steps[0];
+        OpenComboWindow(middle);
+        middle.displayName = "空中连斩 2";
+        var first = AirStep("空中连斩 1", "Jump_Attack_Combo_1_ZeroHeight", .25f, .55f, 18, 1.6f);
+        var last = AirStep("空中砸地", "Jump_Attack_Combo_3_ZeroHeight", .35f, .75f, 34, 1.5f);
+        OpenComboWindow(first);
+        data.steps.Clear(); data.steps.Add(first); data.steps.Add(middle); data.steps.Add(last);
+        data.displayName = "空中连斩"; data.revision++;
+        var errors = data.Validate();
+        EditorUtility.SetDirty(data); AssetDatabase.SaveAssets(); Selection.activeObject = data;
+        if (errors.Count > 0) Debug.LogWarning("[大剑战斗] 空中三连已保存，但需在连招编辑器中调整：" + string.Join("；", errors), data);
+        else Debug.Log("[大剑战斗] 空中三连已保存（版本 " + data.revision + "）。判定时间为按片段比例的初值，请在连招编辑器中按实际挥砍微调后 F5 重载。", data);
+    }
+    // 判定与接段窗口按片段时长比例给初值；具体帧由连招编辑器调整。
+    private static ComboStep AirStep(string display, string clipName, float hitStart, float hitEnd, float damage, float speed)
+    {
+        var clip = SourceClip(clipName); float length = clip.length;
+        return new ComboStep { displayName = display, animationClip = clip, hitStart = length * hitStart, hitEnd = length * hitEnd, playbackSpeed = speed,
+            damage = damage, hitRadius = .7f, hitOffset = new Vector3(0, 1, 1.05f), rootMotionScaleXZ = .15f, allowCancel = false,
+            comboStart = length * Mathf.Min(hitEnd, .9f), comboEnd = length,
+            soundEvents = new List<ComboSoundEvent> { new ComboSoundEvent { time = Mathf.Max(0, length * hitStart - .08f), soundId = "atk01_swing" } } };
+    }
+    private static void OpenComboWindow(ComboStep step)
+    {
+        float length = step.animationClip != null ? step.animationClip.length : 1f;
+        step.comboStart = Mathf.Min(step.hitStart + .05f, length * .9f); step.comboEnd = length;
+    }
+
+    [MenuItem("Tools/大剑战斗/补充浮空受击动画")]
+    public static void AddAirHitClip()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("请先退出运行模式。");
+        var clip = CleanClip("AirHit", "Damage_Front_Flying_ver_B_ZeroHeight");
+        int count = 0;
+        foreach (var path in AssetDatabase.FindAssets("t:EnemyConfig").Select(AssetDatabase.GUIDToAssetPath))
+        {
+            var config = AssetDatabase.LoadAssetAtPath<EnemyConfig>(path);
+            if (config == null || !config.greatSwordEnabled || config.airHitClip != null) continue;
+            Undo.RecordObject(config, "补充浮空受击动画"); config.airHitClip = clip; EditorUtility.SetDirty(config); count++;
+        }
+        AssetDatabase.SaveAssets();
+        Debug.Log($"[大剑战斗] 已生成 {Folder}/AirHit.anim，写入 {count} 份大剑敌人配置；已有设置保留。");
+    }
+
     [MenuItem("Tools/大剑战斗/补接当前玩家浮空链")]
     public static void RepairCurrentAirWiring()
     {
@@ -75,7 +163,8 @@ public static class GreatSwordBattleSetup
         else
         {
             issues.AddRange(settings.launcherCombo.Validate()); issues.AddRange(settings.airStrikeCombo.Validate());
-            if (settings.launcherCombo.steps.Count != 1 || settings.airStrikeCombo.steps.Count != 1) issues.Add("挑飞与空斩各需一段。");
+            if (settings.launcherCombo.steps.Count != 1 || settings.airStrikeCombo.steps.Count < 1 || settings.airStrikeCombo.steps.Count > PlayerAirCombat.MaxStrikeSteps)
+                issues.Add("挑飞需一段，空中连斩需 1～" + PlayerAirCombat.MaxStrikeSteps + " 段。");
         }
         if (issues.Count > 0) throw new InvalidOperationException(string.Join("\n", issues));
         EnsurePlayerAirSlots(controller);

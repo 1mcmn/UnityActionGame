@@ -41,6 +41,13 @@ public class GameManager : MonoBehaviour
 
     private bool _hasStarted;
     private bool _gameEnded;
+
+    /// <summary>战斗结束广播（true＝胜利），供结算界面统计与显示。</summary>
+    public static event System.Action<bool> GameEnded;
+    /// <summary>为 true 时不再显示旧结算面板。</summary>
+    public static bool UseStyledResults { get; set; }
+    public bool HasStarted => _hasStarted;
+    public bool IsGameOver => _gameEnded;
     private int _aliveEnemyCount;
 
     private void Awake()
@@ -198,7 +205,9 @@ public class GameManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        if (_endPanel != null)
+        GameEnded?.Invoke(victory);
+        // 新版结算界面（PauseMenu）存在时由它接管，旧面板保留引用但不再显示。
+        if (_endPanel != null && !UseStyledResults)
         {
             _endPanel.SetActive(true);
             if (_endText != null)

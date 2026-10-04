@@ -17,6 +17,9 @@ public class PlayerAirCombat : MonoBehaviour
     public int LauncherRevision { get; private set; } = -1;
     public int StrikeRevision { get; private set; } = -1;
     public bool CanFollow => _pendingTarget != null && _pendingTarget.CanAirFollow;
+    /// <summary>Q 起手被拒绝的累计次数；HUD 据此抖动键帽，不需要订阅额外事件。</summary>
+    public int RejectCount { get; private set; }
+    public bool ChaseQueued => Phase == AirPhase.Launcher && _queuedChase;
     public bool UsesAirData(ComboData data) => data != null && settings != null && (data == settings.launcherCombo || data == settings.airStrikeCombo);
     public int RevisionFor(ComboData data) => data == settings?.launcherCombo ? LauncherRevision : data == settings?.airStrikeCombo ? StrikeRevision : -1;
     private ThirdPersonController _controller;
@@ -25,12 +28,25 @@ public class PlayerAirCombat : MonoBehaviour
     private Rigidbody _body;
     private Collider _collider;
     private AirChainSettings _snapshot, _pendingSettings;
-    private ComboStep _pendingLauncher, _pendingStrike;
+    private ComboStep _pendingLauncher;
+    private List<ComboStep> _pendingStrikes;
     private int _pendingLauncherRevision, _pendingStrikeRevision;
-    private ComboStep _launcher, _strike, _step;
+    private ComboStep _launcher, _step;
+    private List<ComboStep> _strikes = new List<ComboStep>();
+    private int _strikeIndex, _lastSlot;
+    private bool _queuedNext, _queuedSlam;
+    private float _lmbBufferUntil;
+    public const int MaxStrikeSteps = 5;
+    public bool InStrike => Phase == AirPhase.Strike;
+    public int StrikeIndex => _strikeIndex;
+    public int StrikeCount => _strikes.Count;
+    public bool SlamQueued => _queuedSlam;
+    private bool IsFinalStrike => _strikeIndex >= _strikes.Count - 1;
     private GreatSwordEnemyBrain _target, _pendingTarget;
     private Enemy _targetEnemy;
     private Rigidbody _targetBody;
+    private Collider _targetHurt;
+    private CameraFollow _camera;
     private Quaternion _facing;
     private AnimationClip _activeClip;
     private readonly AnimationClip[] _clips = new AnimationClip[2];
@@ -38,6 +54,8 @@ public class PlayerAirCombat : MonoBehaviour
     private float _phaseAge, _actionStarted, _verticalSpeed, _feetOffset, _cooldownUntil, _previousTime;
     private Vector3 _previousOrigin;
     private bool _windowSeen, _hit, _launchSucceeded, _queuedChase;
+    private const float InputBuffer = .25f;
+    private float _qBufferUntil, _eBufferUntil;
     private Collider[] _overlap = new Collider[32];
     private RaycastHit[] _casts = new RaycastHit[32];
 
@@ -60,11 +78,12 @@ public class PlayerAirCombat : MonoBehaviour
         { Status = "请先保存挑飞/追击配置"; return false; }
 #endif
         if (settings.launcherCombo.Validate().Count > 0 || settings.airStrikeCombo.Validate().Count > 0 ||
-            settings.launcherCombo.steps.Count != 1 || settings.airStrikeCombo.steps.Count != 1)
-        { Status = "挑飞与追击各需一段合法配置"; return false; }
+            settings.launcherCombo.steps.Count != 1 || settings.airStrikeCombo.steps.Count < 1 || settings.airStrikeCombo.steps.Count > MaxStrikeSteps)
+        { Status = "挑飞需一段、空中连斩需 1～" + MaxStrikeSteps + " 段合法配置"; return false; }
         if (_pendingSettings != null) Destroy(_pendingSettings);
         _pendingSettings = Instantiate(settings); _pendingSettings.hideFlags = HideFlags.DontSave;
-        _pendingLauncher = settings.launcherCombo.steps[0].Copy(); _pendingStrike = settings.airStrikeCombo.steps[0].Copy();
+        _pendingLauncher = settings.launcherCombo.steps[0].Copy();
+        _pendingStrikes = settings.airStrikeCombo.steps.ConvertAll(s => s.Copy());
         _pendingLauncherRevision = settings.launcherCombo.revision; _pendingStrikeRevision = settings.airStrikeCombo.revision;
         if (Phase == AirPhase.None && _controller.CanReloadCombo) ApplyReload();
         else Status = "浮空配置待安全状态重载";
@@ -74,7 +93,7 @@ public class PlayerAirCombat : MonoBehaviour
     {
         if (_snapshot != null) Destroy(_snapshot);
         _snapshot = _pendingSettings;
-        _launcher = _pendingLauncher; _strike = _pendingStrike;
+        _launcher = _pendingLauncher; _strikes = _pendingStrikes;
         LauncherRevision = _pendingLauncherRevision; StrikeRevision = _pendingStrikeRevision;
         _pendingSettings = null; Status = "Q 挑飞破防敌人 · E 追击一次";
     }
@@ -82,27 +101,75 @@ public class PlayerAirCombat : MonoBehaviour
     // 与主控制器在一个输入入口消费，避免 MonoBehaviour Update 顺序影响状态切换。
     public bool TickInput()
     {
+        UpdateCameraLift();
         if (Input.GetKeyDown(KeyCode.F5)) RequestReload();
         if (_pendingSettings != null && Phase == AirPhase.None && _controller.CanReloadCombo) ApplyReload();
         if (_snapshot == null) return false;
+        // 输入缓冲按现实时间计，顿帧期间按下的键不会过期过快。
+        bool qPressed = Input.GetKeyDown(KeyCode.Q), ePressed = Input.GetKeyDown(KeyCode.E);
+        if (qPressed) _qBufferUntil = Time.unscaledTime + InputBuffer;
+        if (ePressed) _eBufferUntil = Time.unscaledTime + InputBuffer;
+        if (Input.GetMouseButtonDown(0)) _lmbBufferUntil = Time.unscaledTime + InputBuffer;
         if (Phase != AirPhase.None)
         {
-            if (Phase == AirPhase.Launcher && Input.GetKeyDown(KeyCode.E) && _launchSucceeded) _queuedChase = true;
+            bool eBuffered = Time.unscaledTime < _eBufferUntil;
+            // 挑飞动作中任意时刻按 E 都记为追击意图，命中成功后自动接上。
+            if (Phase == AirPhase.Launcher && eBuffered) { _queuedChase = true; _eBufferUntil = 0; }
+            // 追击或连斩中按 E：预约砸地终结（最后一段不再重复预约）。
+            else if ((Phase == AirPhase.Chase || (Phase == AirPhase.Strike && !IsFinalStrike)) && eBuffered) { _queuedSlam = true; _eBufferUntil = 0; }
+            // 连斩中左键：本段接段窗口结束前按下都记为“接下一段”，允许提前连按。
+            if (Phase == AirPhase.Strike && !IsFinalStrike && Time.unscaledTime < _lmbBufferUntil && _step != null && ClipTime < _step.comboEnd)
+            { _queuedNext = true; _lmbBufferUntil = 0; }
             TickAction(); return true;
         }
         bool safe = _controller.CanReloadCombo || (_controller.State == PlayerState.Attack && _combat.CanCancelAttack);
-        if (!safe || !_controller.IsGroundedForActions) return false;
-        if (Input.GetKeyDown(KeyCode.Q) && Time.time >= _cooldownUntil)
+        if (Time.unscaledTime < _eBufferUntil && CanFollow)
+        { _eBufferUntil = 0; StartChase(_pendingTarget); return true; }
+        if (Time.unscaledTime < _qBufferUntil)
         {
-            var nearest = FindLaunchTarget();
-            if (nearest == null) { Status = "先削满架势，破防后再按 Q"; return false; }
-            BindTarget(nearest); _pendingTarget = null; _launchSucceeded = _queuedChase = false;
-            BeginPhase(AirPhase.Launcher); _controller.BeginAirAction();
-            if (!PlayStep(_launcher, 0)) Finish(false);
-            return true;
+            var nearest = safe && _controller.IsGroundedForActions && Time.time >= _cooldownUntil ? FindLaunchTarget() : null;
+            if (nearest != null)
+            {
+                _qBufferUntil = 0;
+                BindTarget(nearest); _pendingTarget = null; _launchSucceeded = _queuedChase = false;
+                BeginPhase(AirPhase.Launcher); _controller.BeginAirAction();
+                if (!PlayStep(_launcher, 0)) Finish(false);
+                return true;
+            }
+            if (qPressed) Reject(safe);
         }
-        if (Input.GetKeyDown(KeyCode.E) && CanFollow)
-        { StartChase(_pendingTarget); return true; }
+        return false;
+    }
+
+    /// <summary>Q 未能起手时说明具体原因，并通知 HUD 抖动键帽；缓冲仍保留，条件随后满足会自动起手。</summary>
+    private void Reject(bool safe)
+    {
+        RejectCount++;
+        if (Time.time < _cooldownUntil) Status = "挑飞冷却中";
+        else if (!_controller.IsGroundedForActions) Status = "落地后才能挑飞";
+        else if (!safe) Status = "当前动作结束后挑飞";
+        else Status = NearbyBrokenTarget() ? "再靠近一些，贴近破防敌人按 Q" : "先削满架势，破防后再按 Q";
+    }
+
+    /// <summary>挑飞后敌人在空中时，把敌人身体中心交给镜头做双目标取景，主角与敌人同框。</summary>
+    private void UpdateCameraLift()
+    {
+        if (_camera == null && CameraCache.Main != null) _camera = CameraCache.Main.GetComponent<CameraFollow>();
+        if (_camera == null) return;
+        var airborne = _target != null && Phase != AirPhase.None ? _target : _pendingTarget;
+        bool active = airborne != null && airborne.State == EnemyState.Airborne;
+        _camera.HasSecondaryFocus = active;
+        if (active)
+            _camera.SecondaryFocus = airborne == _target && _targetHurt != null ? _targetHurt.bounds.center : airborne.transform.position + Vector3.up * 1.5f;
+    }
+
+    private bool NearbyBrokenTarget()
+    {
+        foreach (var col in Physics.OverlapSphere(_body.position, _snapshot.targetRange * 3f, _combat.EnemyLayer, QueryTriggerInteraction.Collide))
+        {
+            var enemy = col.GetComponentInParent<Enemy>(); var brain = enemy != null ? enemy.GetComponent<GreatSwordEnemyBrain>() : null;
+            if (brain != null && brain.CanLaunch) return true;
+        }
         return false;
     }
 
@@ -122,13 +189,14 @@ public class PlayerAirCombat : MonoBehaviour
     private void BindTarget(GreatSwordEnemyBrain brain)
     {
         _target = brain; _targetEnemy = brain.GetComponent<Enemy>(); _targetBody = brain.GetComponent<Rigidbody>();
+        var hurt = brain.GetComponentInChildren<EnemyHurtbox>(); _targetHurt = hurt != null ? hurt.GetComponent<Collider>() : brain.GetComponent<Collider>();
         Vector3 d = _targetBody.position - _body.position; d.y = 0;
         _facing = d.sqrMagnitude > .001f ? Quaternion.LookRotation(d) : _body.rotation;
     }
     private void StartChase(GreatSwordEnemyBrain brain)
     {
         if (brain == null || !brain.ReserveAirFollow()) return;
-        BindTarget(brain); _pendingTarget = null; _queuedChase = false;
+        BindTarget(brain); _pendingTarget = null; _queuedChase = _queuedSlam = _queuedNext = false;
         BeginPhase(AirPhase.Chase); _controller.BeginAirAction();
         _controller.GetComponent<PlayerAnimController>().TriggerJump(); feedback?.Pulse(Color.cyan, .18f);
         Status = "空中接近";
@@ -136,9 +204,17 @@ public class PlayerAirCombat : MonoBehaviour
     private void BeginPhase(AirPhase phase)
     { Phase = phase; _phaseAge = 0; _actionStarted = Time.time; _verticalSpeed = 0; _token++; _windowSeen = _hit = false; feedback?.SetTrail(false); }
 
+    /// <summary>播放第 index 段空中连斩；两个动画槽交替使用，避免同一状态内替换片段造成跳帧。</summary>
+    private bool PlayStrike(int index)
+    {
+        _strikeIndex = Mathf.Clamp(index, 0, _strikes.Count - 1); _queuedNext = _queuedSlam = false;
+        Status = IsFinalStrike ? "空中砸地！" : $"空中连斩 {_strikeIndex + 1}/{_strikes.Count} · 左键继续 · E 砸地";
+        return PlayStep(_strikes[_strikeIndex], 1 - _lastSlot);
+    }
+
     private bool PlayStep(ComboStep step, int slot)
     {
-        _step = step; _token++; _windowSeen = _hit = false; _previousTime = 0;
+        _step = step; _token++; _windowSeen = _hit = false; _previousTime = 0; _lastSlot = slot; _actionStarted = Time.time;
         _stateHash = Animator.StringToHash(slot == 0 ? "Base Layer.AirLaunch" : "Base Layer.AirStrike");
         var clip = Instantiate(step.animationClip); clip.hideFlags = HideFlags.DontSave; clip.name = "AirAction_" + _token;
         var events = new List<AnimationEvent> { Event("AirHitOpen", step.hitStart, clip), Event("AirHitClose", step.hitEnd, clip) };
@@ -171,6 +247,9 @@ public class PlayerAirCombat : MonoBehaviour
         if (_controller.State != PlayerState.AirAction) { Cancel(); return; }
         if (_target == null || _targetEnemy == null || _targetEnemy.IsDead)
         { if (Phase == AirPhase.Launcher) Finish(false); else if (Phase != AirPhase.Landing) BeginLanding(); }
+        // 空中连斩：到达本段接段窗口时，左键接下一段，E 直接跳到最后一段砸地。
+        if (Phase == AirPhase.Strike && _step != null && !IsFinalStrike && (_queuedNext || _queuedSlam) && ClipTime >= _step.comboStart)
+        { if (!PlayStrike(_queuedSlam ? _strikes.Count - 1 : _strikeIndex + 1)) BeginLanding(); }
         if ((Phase == AirPhase.Launcher || Phase == AirPhase.Strike) && _step != null &&
             (ClipTime >= _step.animationClip.length || Time.time - _actionStarted > _step.PlaybackDuration + .5f))
         {
@@ -184,14 +263,23 @@ public class PlayerAirCombat : MonoBehaviour
         if (Phase == AirPhase.Chase && _target != null && _targetBody != null)
         {
             float d = Vector3.Distance(_body.position, ChasePosition());
-            if (_phaseAge >= _snapshot.chaseDuration && d < .5f)
-            { BeginPhase(AirPhase.Strike); Status = "空中斩击"; if (!PlayStep(_strike, 1)) BeginLanding(); }
+            if (_phaseAge >= _snapshot.chaseDuration && d < .8f)
+            { BeginPhase(AirPhase.Strike); if (!PlayStrike(_queuedSlam ? _strikes.Count - 1 : 0)) BeginLanding(); }
             else if (_phaseAge > _snapshot.chaseDuration + .6f || _target.State != EnemyState.Airborne) BeginLanding();
         }
         if ((Phase == AirPhase.Chase || Phase == AirPhase.Strike) && _phaseAge > _snapshot.maximumAirDuration) BeginLanding();
         if (Phase == AirPhase.Landing && _controller.IsGroundedForActions && _phaseAge > .08f) Finish(false);
     }
-    private Vector3 ChasePosition() => _targetBody.position - (_facing * Vector3.forward) * _snapshot.strikeDistance;
+    /// <summary>追击落点：对准敌人受击体中心高度，水平距离至少留出敌人半径；敌人缩放变化时仍砍在躯干上。</summary>
+    private Vector3 ChasePosition()
+    {
+        Bounds b = _targetHurt != null ? _targetHurt.bounds : new Bounds(_targetBody.position + Vector3.up, Vector3.one);
+        float chest = _collider != null ? _collider.bounds.center.y - _body.position.y : .9f;
+        float reach = Mathf.Max(_snapshot.strikeDistance, Mathf.Min(b.extents.x, b.extents.z) + .35f);
+        Vector3 goal = b.center - (_facing * Vector3.forward) * reach;
+        goal.y = b.center.y - chest;
+        return goal;
+    }
     private void BeginLanding()
     { BeginPhase(AirPhase.Landing); _verticalSpeed = -2f; _controller.GetComponent<PlayerAnimController>().TriggerJump(); Status = "落地恢复"; }
 
@@ -199,9 +287,21 @@ public class PlayerAirCombat : MonoBehaviour
     {
         _phaseAge += dt;
         Vector3 delta = Vector3.zero;
-        if (Phase == AirPhase.Chase && _targetBody != null) delta = Vector3.MoveTowards(_body.position, ChasePosition(), _snapshot.chaseSpeed * dt) - _body.position;
+        if (Phase == AirPhase.Chase && _targetBody != null)
+        {
+            // 按剩余冲刺时间反推速度，保证在 chaseDuration 内贴到目标，不再因距离偏差落空；上限 3 倍防止瞬移。
+            Vector3 goal = ChasePosition();
+            float remaining = Mathf.Max(_snapshot.chaseDuration - _phaseAge, dt);
+            float speed = Mathf.Clamp(Vector3.Distance(_body.position, goal) / remaining, _snapshot.chaseSpeed, _snapshot.chaseSpeed * 3f);
+            delta = Vector3.MoveTowards(_body.position, goal, speed * dt) - _body.position;
+        }
         else if (Phase == AirPhase.Launcher || Phase == AirPhase.Strike)
-        { delta = rootDelta * (_step != null ? _step.rootMotionScaleXZ : 0); delta.y = 0; }
+        {
+            delta = rootDelta * (_step != null ? _step.rootMotionScaleXZ : 0); delta.y = 0;
+            // 连斩期间柔和跟随敌人高度，敌人被顶起或下落时始终砍在躯干上。
+            if (Phase == AirPhase.Strike && _targetBody != null && _target != null && _target.State == EnemyState.Airborne)
+                delta.y = (ChasePosition().y - _body.position.y) * (1f - Mathf.Exp(-8f * dt));
+        }
         if (Phase == AirPhase.Landing)
         {
             _verticalSpeed -= _snapshot.gravity * dt; delta.y = _verticalSpeed * dt;
@@ -257,10 +357,19 @@ public class PlayerAirCombat : MonoBehaviour
         DamagePopupManager.Instance?.Show(col.bounds.center, Mathf.Max(0, before - _targetEnemy.CurrentHealth));
         // 致死命中可能同步触发胜利界面并禁用玩家。
         if (!isActiveAndEnabled || Phase == AirPhase.None || _target == null) return;
-        feedback?.Impact(col.bounds.center, Color.cyan); _combat.TriggerHitStopForce();
+        bool launching = Phase == AirPhase.Launcher;
+        if (launching)
+        {
+            _launchSucceeded = _target.TryLaunch();
+            Status = !_launchSucceeded ? "挑飞条件已结束" : _queuedChase ? "已挑飞！自动追击" : "已挑飞！按 E 追击";
+        }
+        // 只有最后一段砸地；中间段由敌人空中受击自行上顶，维持滞空。
+        else if (IsFinalStrike) _target.SlamDown();
+        var kind = launching ? (_launchSucceeded ? CombatImpact.Kind.Launch : CombatImpact.Kind.Hit) : IsFinalStrike ? CombatImpact.Kind.Slam : CombatImpact.Kind.Hit;
+        feedback?.Impact(col.bounds.center, Color.cyan);
+        _combat.TriggerHitStopScaled(CombatImpact.DefaultStrength(kind));
+        CombatImpact.Raise(kind, col.bounds.center);
         SoundManager.Instance?.PlayByPrefix("atk01_hit", col.bounds.center);
-        if (Phase == AirPhase.Launcher) { _launchSucceeded = _target.TryLaunch(); Status = _launchSucceeded ? "已挑飞！按 E 追击" : "挑飞条件已结束"; }
-        else _target.SlamDown();
     }
     private void Finish(bool keepTarget)
     {
@@ -273,6 +382,6 @@ public class PlayerAirCombat : MonoBehaviour
     }
     public void Cancel()
     { Phase = AirPhase.None; _token++; _pendingTarget = null; _target = null; _windowSeen = false; feedback?.SetTrail(false); }
-    private void OnDisable() { Cancel(); }
+    private void OnDisable() { Cancel(); if (_camera != null) _camera.HasSecondaryFocus = false; }
     private void OnDestroy() { foreach (var clip in _clips) if (clip != null) Destroy(clip); if (_snapshot != null) Destroy(_snapshot); if (_pendingSettings != null) Destroy(_pendingSettings); }
 }

@@ -242,6 +242,7 @@ public partial class PlayerCombat : MonoBehaviour
         {
             PlayHitSfxByStep();
             TriggerHitStop();
+            CombatImpact.Raise(CombatImpact.Kind.Hit, _lastHitPoint);
         }
     }
 
@@ -261,10 +262,13 @@ public partial class PlayerCombat : MonoBehaviour
     }
 
     /// <summary>强制触发顿帧（弹刀等非命中场景使用）</summary>
-    public void TriggerHitStopForce()
+    public void TriggerHitStopForce() => TriggerHitStopScaled(1f);
+
+    /// <summary>按倍率延长顿帧：终结段、挑飞、砸地等重击使用更长停顿。</summary>
+    public void TriggerHitStopScaled(float multiplier)
     {
         if (!Application.isPlaying || !isActiveAndEnabled) return;
-        _hitStopUntil = Mathf.Max(_hitStopUntil, Time.realtimeSinceStartup + _hitStopDuration);
+        _hitStopUntil = Mathf.Max(_hitStopUntil, Time.realtimeSinceStartup + _hitStopDuration * Mathf.Max(0f, multiplier));
         if (_hitStopRoutine == null) _hitStopRoutine = StartCoroutine(HitStopRoutine());
     }
 
@@ -276,7 +280,7 @@ public partial class PlayerCombat : MonoBehaviour
         _timeScaleBeforeHitStop = Time.timeScale;
         Time.timeScale = _hitStopScale;
         while (Time.realtimeSinceStartup < _hitStopUntil) yield return null;
-        Time.timeScale = _timeScaleBeforeHitStop;
+        Time.timeScale = GamePause.IsPaused ? 0f : _timeScaleBeforeHitStop;
         _hitStopRoutine = null;
     }
 
@@ -358,7 +362,8 @@ public partial class PlayerCombat : MonoBehaviour
                 // 弹刀成功反馈：金属碰撞音效 + 顿帧
                 if (SoundManager.Instance != null)
                     SoundManager.Instance.Play("sword_hit_03", transform.position);
-                TriggerHitStopForce();
+                TriggerHitStopScaled(CombatImpact.DefaultStrength(CombatImpact.Kind.Parry));
+                CombatImpact.Raise(CombatImpact.Kind.Parry, col.bounds.center);
             }
         }
 

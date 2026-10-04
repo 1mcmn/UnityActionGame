@@ -15,8 +15,11 @@ public class GreatSwordEnemyBrain : MonoBehaviour
     public bool IsBroken => _broken;
     public bool CanLaunch => isActiveAndEnabled && _enemy != null && !_enemy.IsDead && _broken && !_launchedThisBreak && (State == EnemyState.StunStart || State == EnemyState.StunLoop);
     public bool CanAirFollow => isActiveAndEnabled && _enemy != null && State == EnemyState.Airborne && !_followupConsumed && !_enemy.IsDead;
-    public string ActionHint => _broken ? (CanLaunch ? "破防！Q 挑飞" : (State == EnemyState.Airborne ? "浮空中" : "压制期")) :
+    public string ActionHint => _broken ? (CanLaunch ? "破防！Q 挑飞 · 左键倒地追打" : State == EnemyState.Airborne ? "浮空中 · E 追击 / 左键连斩" : IsDowned ? "倒地追打中" : "压制期") :
         (CanParryNow ? "红色破绽 · 右键弹反" : (IsGuardState ? $"正面格挡 {_guardHits}/{Config.guardCounterHits}" : "观察起手，侧闪或绕后"));
+    /// <summary>破防后的“压制期”：倒地（含挑飞落地后）或浮空，HUD 据此切换架势条显示。</summary>
+    public bool IsDowned => _broken && (State == EnemyState.StunStart || State == EnemyState.StunLoop);
+    public float SuppressRemaining01 => !_broken ? 0 : State == EnemyState.Airborne ? 1 : Mathf.Clamp01(_breakRemaining / Mathf.Max(.1f, Config.breakDuration));
     public bool CanParryNow => State == EnemyState.Attack && _action != null && _action.parryable &&
         ActionTime >= _action.parryStart && ActionTime < _action.parryEnd;
 
@@ -40,6 +43,7 @@ public class GreatSwordEnemyBrain : MonoBehaviour
     private int _guardHits, _attackCycle;
     private bool _windowOpen, _windowSeen, _delivered, _broken, _launchedThisBreak, _followupConsumed, _started;
     private float _previousTime, _breakRemaining, _airVelocity, _airAge, _holdRemaining, _fallVelocity;
+    private float _downExtended, _downReactUntil;
     private Vector3 _previousOrigin, _spawn, _patrol, _push;
     private float _patrolWait, _pushRemaining;
     private bool IsGuardState => State == EnemyState.Guard || State == EnemyState.GuardStart || State == EnemyState.GuardHit;
@@ -165,6 +169,8 @@ public class GreatSwordEnemyBrain : MonoBehaviour
                 break;
             case EnemyState.StunLoop:
                 _breakRemaining -= dt;
+                // 倒地受击片段播完后回到倒地循环。
+                if (_downReactUntil > 0 && Time.time >= _downReactUntil) { _downReactUntil = 0; animator.CrossFadeInFixedTime(Animator.StringToHash("Base Layer.DownLoop"), .1f, 0, 0); }
                 if (_breakRemaining <= 0) Enter(EnemyState.StunEnd, "GetUp", Length(Config.getUpClip));
                 break;
             case EnemyState.StunEnd:
@@ -187,6 +193,7 @@ public class GreatSwordEnemyBrain : MonoBehaviour
     private void Enter(EnemyState state, string animation, float duration = 0)
     {
         _token++; _action = null; _windowOpen = _windowSeen = _delivered = false;
+        _downReactUntil = 0;
         feedback?.SetTrail(false); feedback?.SetWarning(false);
         if (!IsGuardState && state != EnemyState.GuardStart) _guardHits = 0;
         State = state; _age = 0; _duration = Mathf.Max(.05f, duration);
@@ -261,10 +268,16 @@ public class GreatSwordEnemyBrain : MonoBehaviour
         {
             if (State == EnemyState.Airborne)
             {
+                if (_airVelocity <= 0 && _airApexPending) BeginAirApex(_body.position.y - floor);
                 if (_airVelocity <= 0 && _holdRemaining > 0) { _holdRemaining -= dt; delta.y = 0; }
                 else { _airVelocity -= Config.airGravity * dt; delta.y = _airVelocity * dt; }
                 if (_body.position.y + delta.y <= floor + .02f && _airVelocity < 0)
-                { delta.y = floor + .02f - _body.position.y; _breakRemaining = Mathf.Max(_breakRemaining, 1.5f); Enter(EnemyState.StunStart, "DownStart", Length(Config.downStartClip)); feedback?.Impact(_body.position, Color.yellow); }
+                {
+                    bool slammed = _airVelocity <= -Config.slamSpeed * .8f;
+                    delta.y = floor + .02f - _body.position.y; _breakRemaining = Mathf.Max(_breakRemaining, 1.5f); Enter(EnemyState.StunStart, "DownStart", Length(Config.downStartClip)); feedback?.Impact(_body.position, Color.yellow);
+                    // 落地震动只做镜头表现，不计入连段、不触发顿帧；被砸下来的落地更重。
+                    CombatImpact.Raise(CombatImpact.Kind.Quake, _body.position, slammed ? 2.2f : 1f);
+                }
             }
             else if (_body.position.y > floor + .06f)
             { _fallVelocity -= Config.airGravity * dt; delta.y = Mathf.Max(floor + .02f - _body.position.y, _fallVelocity * dt); }
@@ -337,6 +350,8 @@ public class GreatSwordEnemyBrain : MonoBehaviour
     private void OnDamaged(float damage)
     {
         feedback?.Pulse(Color.white);
+        if (State == EnemyState.Airborne && !_enemy.IsDead) { AirHit(); return; }
+        if (IsDowned && !_enemy.IsDead) { DownHit(); return; }
         if (_enemy.IsDead || _broken || (State == EnemyState.Attack && _action != null && _action.superArmor) || Time.time < _nextHitReaction) return;
         _nextHitReaction = Time.time + Config.ordinaryHitCooldown;
         Enter(EnemyState.Staggered, "Hit", Length(Config.hitClip));
@@ -344,15 +359,74 @@ public class GreatSwordEnemyBrain : MonoBehaviour
     private void BeginBreak()
     {
         if (_broken || _enemy.IsDead) return;
-        _broken = true; _launchedThisBreak = _followupConsumed = false; _breakRemaining = Config.breakDuration;
+        _broken = true; _launchedThisBreak = _followupConsumed = false; _breakRemaining = Config.breakDuration; _downExtended = 0;
         Enter(EnemyState.StunStart, "DownStart", Length(Config.downStartClip)); feedback?.Pulse(Color.yellow, .3f);
     }
+
+    /// <summary>实际浮空高度：放大的敌人按缩放开方加高，避免巨型敌人只离地半个身位。</summary>
+    public float LaunchHeight => Config.launchHeight * (Config.scaleLaunchWithBody ? Mathf.Sqrt(Mathf.Max(1f, transform.lossyScale.y)) : 1f);
+    private const float AirRisePortion = .6f;
+    private bool _airApexPending;
+
     public bool TryLaunch()
     {
         if (!CanLaunch || _enemy.IsDead) return false;
         _launchedThisBreak = true; _followupConsumed = false;
-        _airVelocity = Mathf.Sqrt(2 * Config.airGravity * Config.launchHeight); _airAge = 0; _holdRemaining = Config.apexHoldTime;
-        Enter(EnemyState.Airborne, "Airborne"); return true;
+        _airVelocity = Mathf.Sqrt(2 * Config.airGravity * LaunchHeight); _airAge = 0; _holdRemaining = Config.apexHoldTime;
+        Enter(EnemyState.Airborne, "Airborne");
+        // 浮空片段很短：上升段放慢播完前 60%，剩余部分在顶点停留与下落期间播完，不再长时间定格。
+        var clip = Config.airborneClip;
+        if (clip != null) PlayAirClip(clip, AirRisePortion * clip.length / Mathf.Max(.05f, _airVelocity / Config.airGravity));
+        _airApexPending = clip != null;
+        return true;
+    }
+
+    private void BeginAirApex(float height)
+    {
+        _airApexPending = false;
+        var clip = Config.airborneClip;
+        if (clip == null) return;
+        float remaining = _holdRemaining + Mathf.Sqrt(2 * Mathf.Max(.1f, height) / Config.airGravity);
+        animator.SetFloat(_slot == 0 ? "EnemySpeedA" : "EnemySpeedB", (1 - AirRisePortion) * clip.length / Mathf.Max(.1f, remaining));
+    }
+
+    /// <summary>倒地追打：每次命中延长压制时间（单次破防有上限），倒地循环中播放受击片段后回到循环。</summary>
+    private void DownHit()
+    {
+        float add = Mathf.Min(Config.downHitExtend, Config.downExtendCap - _downExtended);
+        if (add > 0) { _breakRemaining += add; _downExtended += add; }
+        var clip = Config.downHitClip;
+        if (State != EnemyState.StunLoop || clip == null) return;
+        float speed = Mathf.Max(1f, clip.length / .5f);
+        PlayAirClip(clip, speed);
+        _downReactUntil = Time.time + clip.length / speed;
+    }
+
+    /// <summary>空中被追击命中：播放受击片段（缺省回退浮空片段），下落中会被往上顶一下形成追打感。</summary>
+    private void AirHit()
+    {
+        _airApexPending = false;
+        if (_airVelocity < Config.airHitBump) _airVelocity = Config.airHitBump;
+        _holdRemaining = Mathf.Max(_holdRemaining, .15f);
+        _airAge = Mathf.Min(_airAge, Config.maximumAirDuration - 1f); // 连斩中每次受击延长滞空上限，避免被强制砸地
+        var clip = Config.airHitClip != null ? Config.airHitClip : Config.airborneClip;
+        if (clip != null) PlayAirClip(clip, Mathf.Max(1f, clip.length / .6f));
+    }
+
+    /// <summary>借用攻击槽播放浮空/倒地受击片段；压制期内敌人不会攻击，槽位不冲突。</summary>
+    private void PlayAirClip(AnimationClip source, float speed)
+    {
+        _slot = 1 - _slot;
+        var clip = Instantiate(source); clip.hideFlags = HideFlags.DontSave; clip.name = "EnemyAir_" + _token; clip.events = Array.Empty<AnimationEvent>();
+        if (_clips[_slot] != null) Destroy(_clips[_slot], .5f);
+        _clips[_slot] = clip;
+        var placeholder = _slot == 0 ? Config.attackPlaceholderA : Config.attackPlaceholderB;
+        for (int i = 0; i < _overrides.Count; i++) if (_overrides[i].Key == placeholder)
+            _overrides[i] = new KeyValuePair<AnimationClip, AnimationClip>(placeholder, clip);
+        _override.ApplyOverrides(_overrides);
+        animator.SetFloat(_slot == 0 ? "EnemySpeedA" : "EnemySpeedB", speed);
+        _stateHash = Animator.StringToHash(_slot == 0 ? "Base Layer.EnemySlotA" : "Base Layer.EnemySlotB");
+        animator.CrossFadeInFixedTime(_stateHash, .06f, 0, 0);
     }
     public bool ReserveAirFollow()
     { if (!CanAirFollow) return false; _followupConsumed = true; return true; }

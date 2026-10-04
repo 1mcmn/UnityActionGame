@@ -293,7 +293,7 @@ public partial class PlayerCombat
         // Normal动画仍支持原LateUpdate路径；物理动画已逐步采样，不再用插值姿态重复检测。
         if (_animator == null || _animator.updateMode != AnimatorUpdateMode.AnimatePhysics)
             SampleComboHitAfterRootMotion();
-        if (Input.GetKeyDown(KeyCode.F5) && comboData != null) RequestReload(comboData);
+        if (!GamePause.IsPaused && Input.GetKeyDown(KeyCode.F5) && comboData != null) RequestReload(comboData);
         ApplyPendingReloadIfSafe();
     }
 
@@ -321,7 +321,14 @@ public partial class PlayerCombat
             } while (true);
             for (int i = 0; i < count; i++) ApplySwingDamage(_castResults[i].collider, ActiveStep.damage);
         }
-        if (_hasHitThisSwing && !hitBefore) { PlayHitSfxByStep(); TriggerHitStop(); }
+        if (_hasHitThisSwing && !hitBefore)
+        {
+            // 终结段使用更长顿帧与重震动；倍率与 HUD 共享 CombatImpact 刻度。
+            var kind = _comboStep + 1 >= StepCount ? CombatImpact.Kind.Finisher : CombatImpact.Kind.Hit;
+            PlayHitSfxByStep();
+            TriggerHitStopScaled(CombatImpact.DefaultStrength(kind));
+            CombatImpact.Raise(kind, _lastHitPoint);
+        }
     }
 
     private void ApplySwingDamage(Collider col, float damage)
@@ -338,7 +345,7 @@ public partial class PlayerCombat
         Vector3 hitPoint = col.bounds.center;
         var result = target.ReceiveHit(damage, damage, transform.position, direction.sqrMagnitude > .0001f ? direction.normalized : transform.forward);
         if (!isActiveAndEnabled || !_swingActive) return;
-        if (result == EnemyHitResult.Blocked) { SoundManager.Instance?.Play("sword_hit_03", hitPoint); return; }
+        if (result == EnemyHitResult.Blocked) { SoundManager.Instance?.Play("sword_hit_03", hitPoint); CombatImpact.Raise(CombatImpact.Kind.Guarded, hitPoint); return; }
         float actual = Mathf.Max(0f, before - target.CurrentHealth);
         if (actual <= 0f) return;
         _hasHitThisSwing = true;
@@ -415,7 +422,7 @@ public partial class PlayerCombat
         {
             StopCoroutine(_hitStopRoutine);
             _hitStopRoutine = null;
-            Time.timeScale = _timeScaleBeforeHitStop;
+            Time.timeScale = GamePause.IsPaused ? 0f : _timeScaleBeforeHitStop;
         }
     }
 

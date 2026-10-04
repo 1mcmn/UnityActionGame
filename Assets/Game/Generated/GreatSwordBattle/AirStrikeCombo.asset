@@ -12,19 +12,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 252088645b3687949b8bdd81404d381f, type: 3}
   m_Name: AirStrikeCombo
   m_EditorClassIdentifier: 
-  displayName: "\u7A7A\u4E2D\u8FFD\u51FB"
+  displayName: "\u7A7A\u4E2D\u8FDE\u65A9"
   schemaVersion: 1
-  revision: 1
+  revision: 2
   steps:
+  - stepId: 79103d8ec30e436c92965ac06ade43d1
+    displayName: "\u7A7A\u4E2D\u8FDE\u65A9 1"
+    animationClip: {fileID: 7400000, guid: 846826d937cf6984aa115d80d829962c, type: 3}
+    playbackSpeed: 1.6
+    damage: 18
+    hitStart: 0.33333334
+    hitEnd: 0.73333335
+    comboStart: 0.38333336
+    comboEnd: 1.3333334
+    rootMotionScaleXZ: 0.15
+    hitRadius: 0.7
+    hitOffset: {x: 0, y: 1, z: 1.05}
+    allowCancel: 0
+    cancelStart: 0.4
+    cancelEnd: 0.7
+    soundEvents:
+    - time: 0.25333333
+      soundId: atk01_swing
   - stepId: de84be6b7e324f4abb6f95b08f8ce746
-    displayName: "\u7A7A\u4E2D\u8FFD\u51FB"
+    displayName: "\u7A7A\u4E2D\u8FDE\u65A9 2"
     animationClip: {fileID: 7400000, guid: c6682b74c650f464abf152cff106cad8, type: 3}
     playbackSpeed: 1.7
     damage: 28
     hitStart: 0.32
     hitEnd: 0.7
-    comboStart: 0.35
-    comboEnd: 0.65
+    comboStart: 0.37
+    comboEnd: 1.3666668
     rootMotionScaleXZ: 0.15
     hitRadius: 0.65
     hitOffset: {x: 0, y: 1, z: 1.05}
@@ -33,6 +51,24 @@ MonoBehaviour:
     cancelEnd: 0.7
     soundEvents:
     - time: 0.24
+      soundId: atk01_swing
+  - stepId: 7bb6f089db134e699fa102c9790444b6
+    displayName: "\u7A7A\u4E2D\u7838\u5730"
+    animationClip: {fileID: 7400000, guid: 22ea65b02571b944dab02df23d4069f4, type: 3}
+    playbackSpeed: 1.5
+    damage: 34
+    hitStart: 0.43166667
+    hitEnd: 0.925
+    comboStart: 0.925
+    comboEnd: 1.2333333
+    rootMotionScaleXZ: 0.15
+    hitRadius: 0.7
+    hitOffset: {x: 0, y: 1, z: 1.05}
+    allowCancel: 0
+    cancelStart: 0.4
+    cancelEnd: 0.7
+    soundEvents:
+    - time: 0.35166666
       soundId: atk01_swing
   attackDuration: 0.45
   attackRadius: 2.5
