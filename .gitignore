@@ -22,6 +22,6 @@
 /TestResults/
 *.unitypackage
 
-# 大型素材包（体积超过 GitHub 仓库限制，本地保留，不入库）
-/Assets/Imports/Grruzam Powerful Sword Animation(Great Sword, Katana)/
+# 大剑动画素材已纳入 Git LFS，原 .meta 随仓库保存
+
 
