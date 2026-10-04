@@ -56,6 +56,52 @@ public static class GreatSwordBattleSetup
         Debug.Log("[大剑战斗] 当前场景接线完成，请保存场景。已有配置数值保留。");
     }
 
+    [MenuItem("Tools/大剑战斗/补接当前玩家浮空链")]
+    public static void RepairCurrentAirWiring()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("请先退出运行模式。");
+        var scene = SceneManager.GetActiveScene();
+        var player = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<PlayerCombat>(true)).Single();
+        var enemy = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<GreatSwordEnemyBrain>(true))
+            .OrderBy(e => Vector3.Distance(e.transform.position, player.transform.position)).FirstOrDefault();
+        if (enemy == null) throw new InvalidOperationException("当前场景需先有大剑敌人。此入口只补玩家，不替换敌人或场景布局。");
+        var animator = player.GetComponentInChildren<Animator>(true);
+        var controller = animator != null ? animator.runtimeAnimatorController as AnimatorController : null;
+        if (controller == null || !AssetDatabase.GetAssetPath(controller).StartsWith("Assets/Game/Generated/", StringComparison.Ordinal))
+            throw new InvalidOperationException("玩家需绑定Game/Generated下的普通演示控制器，避免修改导入包控制器。");
+        var settings = AirSettings();
+        var issues = settings.Validate();
+        if (settings.launcherCombo == null || settings.airStrikeCombo == null) issues.Add("缺少挑飞/空斩资产。");
+        else
+        {
+            issues.AddRange(settings.launcherCombo.Validate()); issues.AddRange(settings.airStrikeCombo.Validate());
+            if (settings.launcherCombo.steps.Count != 1 || settings.airStrikeCombo.steps.Count != 1) issues.Add("挑飞与空斩各需一段。");
+        }
+        if (issues.Count > 0) throw new InvalidOperationException(string.Join("\n", issues));
+        EnsurePlayerAirSlots(controller);
+        var air = GetOrAdd<PlayerAirCombat>(player.gameObject);
+        var feedback = GetOrAdd<CombatFeedback>(player.gameObject);
+        Undo.RecordObjects(new UnityEngine.Object[] { air, feedback }, "补接当前玩家浮空链");
+        air.settings = settings;
+        air.launcherPlaceholder = AssetDatabase.LoadAssetAtPath<AnimationClip>(Folder + "/AirLaunchPlaceholder.anim");
+        air.strikePlaceholder = AssetDatabase.LoadAssetAtPath<AnimationClip>(Folder + "/AirStrikePlaceholder.anim");
+        if (feedback.effectMaterial == null) feedback.effectMaterial = EffectMaterial();
+        if (feedback.weaponTip == null) feedback.weaponTip = WeaponTip(player.gameObject);
+        air.feedback = feedback;
+        var manager = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<GameManager>(true)).SingleOrDefault();
+        if (manager != null)
+        {
+            var hud = GetOrAdd<CombatCycleHUD>(manager.gameObject);
+            Undo.RecordObject(hud, "补接浮空提示"); hud.player = air; hud.enemy = enemy;
+            EditorUtility.SetDirty(hud); PrefabUtility.RecordPrefabInstancePropertyModifications(hud);
+        }
+        foreach (var component in new UnityEngine.Object[] { air, feedback })
+        { EditorUtility.SetDirty(component); PrefabUtility.RecordPrefabInstancePropertyModifications(component); }
+        AssetDatabase.SaveAssetIfDirty(controller);
+        EditorSceneManager.MarkSceneDirty(scene);
+        Debug.Log("[大剑战斗] 已补接当前玩家Q/E组件与动画槽，保留原控制器及普通连招。请保存场景后重新进入Play。", player);
+    }
+
     public static void ConfigureScene(Scene scene)
     {
         var player = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<PlayerCombat>(true)).Single();
@@ -207,11 +253,22 @@ public static class GreatSwordBattleSetup
     {
         string path = Folder + "/PlayerBattle.controller"; var result = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
         if (result == null) { if (!AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(source), path)) throw new IOException("玩家控制器复制失败。"); result = AssetDatabase.LoadAssetAtPath<AnimatorController>(path); }
-        foreach (var name in new[] { "AirLaunchSpeed", "AirStrikeSpeed" }) if (!result.parameters.Any(p => p.name == name)) result.AddParameter(name, AnimatorControllerParameterType.Float);
-        AddState(result, "AirLaunch", CleanClip("AirLaunchPlaceholder", "UpperAttack_ZeroHeight"), "AirLaunchSpeed");
-        AddState(result, "AirStrike", CleanClip("AirStrikePlaceholder", "Jump_Attack_Combo_2_ZeroHeight"), "AirStrikeSpeed");
+        EnsurePlayerAirSlots(result);
         ComboDemoSetup.PrepareActionPlayback(result);
         EditorUtility.SetDirty(result); return result;
+    }
+    private static void EnsurePlayerAirSlots(AnimatorController controller)
+    {
+        foreach (var name in new[] { "AirLaunchSpeed", "AirStrikeSpeed" })
+        {
+            var parameter = controller.parameters.FirstOrDefault(p => p.name == name);
+            if (parameter != null && parameter.type != AnimatorControllerParameterType.Float)
+                throw new InvalidOperationException("浮空倍速参数必须为Float：" + name);
+            if (parameter == null) controller.AddParameter(new AnimatorControllerParameter { name = name, type = AnimatorControllerParameterType.Float, defaultFloat = 1f });
+        }
+        AddState(controller, "AirLaunch", CleanClip("AirLaunchPlaceholder", "UpperAttack_ZeroHeight"), "AirLaunchSpeed");
+        AddState(controller, "AirStrike", CleanClip("AirStrikePlaceholder", "Jump_Attack_Combo_2_ZeroHeight"), "AirStrikeSpeed");
+        EditorUtility.SetDirty(controller);
     }
     private static void AddState(AnimatorController controller, string name, AnimationClip clip, string speedParameter = null, float speed = 1)
     {

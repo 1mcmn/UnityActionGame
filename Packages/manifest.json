@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "com.coffee.ui-effect": "https://github.com/mob-sakai/UIEffect.git?path=Packages/src#bbb5ae0f3e0389c797be1343f18634968bef18c0",
+    "com.kyrylokuzyk.primetween": "1.4.11",
     "com.unity.collab-proxy": "2.12.4",
     "com.unity.feature.development": "1.0.1",
     "com.unity.postprocessing": "3.4.0",
@@ -41,5 +43,14 @@
     "com.unity.modules.xr": "1.0.0",
     "cn.tuanjie.codely.bridge": "file:../.codely.packages/cn.tuanjie.codely.bridge@1.0.85-47f31100",
     "cn.tuanjie.ai.generators": "file:../.codely-cli/extensions/TJGenerators/Packages/cn.tuanjie.ai.generators"
-  }
+  },
+  "scopedRegistries": [
+    {
+      "name": "PrimeTween (npm)",
+      "url": "https://registry.npmjs.org/",
+      "scopes": [
+        "com.kyrylokuzyk"
+      ]
+    }
+  ]
 }

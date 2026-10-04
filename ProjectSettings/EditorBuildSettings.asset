@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Game/Scenes/menu.scene
+    guid: a8b82acb7ea1bef4c80557c541f09565
+  - enabled: 1
     path: Assets/Game/Scenes/DEMO City Crossing.unity
     guid: 8e2a8661a47cbdb49b7340281ccb580f
   m_BuildProfiles: []

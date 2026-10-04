@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: "\u6F14\u793A\u666E\u901A\u4E09\u6BB5\u8FDE\u62DB"
   schemaVersion: 1
-  revision: 14
+  revision: 18
   steps:
   - stepId: 3730d247f5d047e08e48425f35788d8e
     displayName: "\u666E\u901A\u653B\u51FB 1"
-    animationClip: {fileID: 7400000, guid: 6bddcdfebb3a83e46991aa42b76c7259, type: 3}
+    animationClip: {fileID: 7400000, guid: 7453379ea4350304fb1b17077af19160, type: 3}
     playbackSpeed: 1
     damage: 15
     hitStart: 0.3

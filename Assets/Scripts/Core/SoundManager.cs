@@ -148,9 +148,16 @@ public class SoundManager : MonoBehaviour
         src.transform.position = position;
         src.clip = clip;
         src.pitch = pitch;
+        src.volume = NativeMenuAudio.EffectsVolume;
         src.Play();
 
         StartCoroutine(Recycle(src, clip.length / pitch + 0.1f));
+    }
+
+    public void SetEffectsVolume(float value)
+    {
+        if (_poolRoot == null) return;
+        foreach (var source in _poolRoot.GetComponentsInChildren<AudioSource>(true)) source.volume = Mathf.Clamp01(value);
     }
 
     private AudioSource GetPooledSource()

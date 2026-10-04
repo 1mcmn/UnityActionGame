@@ -14,26 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: "\u5927\u5251\u6218\u6597\u666E\u901A\u4E09\u6BB5"
   schemaVersion: 1
-  revision: 15
+  revision: 18
   steps:
-  - stepId: 3730d247f5d047e08e48425f35788d8e
-    displayName: "\u666E\u901A\u653B\u51FB 1"
-    animationClip: {fileID: 7400000, guid: 6bddcdfebb3a83e46991aa42b76c7259, type: 3}
-    playbackSpeed: 1
-    damage: 15
-    hitStart: 0.3
-    hitEnd: 1.0200001
-    comboStart: 0.4
-    comboEnd: 0.67
-    rootMotionScaleXZ: 1
-    hitRadius: 0.3
-    hitOffset: {x: 0, y: 1, z: 1}
-    allowCancel: 1
-    cancelStart: 1
-    cancelEnd: 1.1
-    soundEvents:
-    - time: 0.3
-      soundId: atk01_hit_01
   - stepId: 257e0c3a0a2a45459691189f8842311b
     displayName: "\u666E\u901A\u653B\u51FB 2"
     animationClip: {fileID: 7400000, guid: 1a436aa52e89b8049bdafcd98b98ca6b, type: 3}
@@ -52,6 +34,24 @@ MonoBehaviour:
     soundEvents:
     - time: 0.15
       soundId: atk02_swing_01
+  - stepId: 3730d247f5d047e08e48425f35788d8e
+    displayName: "\u666E\u901A\u653B\u51FB 1"
+    animationClip: {fileID: 7400000, guid: 6bddcdfebb3a83e46991aa42b76c7259, type: 3}
+    playbackSpeed: 1
+    damage: 15
+    hitStart: 0.3
+    hitEnd: 1.0200001
+    comboStart: 0.4
+    comboEnd: 0.67
+    rootMotionScaleXZ: 1
+    hitRadius: 0.3
+    hitOffset: {x: 0, y: 1, z: 1}
+    allowCancel: 1
+    cancelStart: 1
+    cancelEnd: 1.1
+    soundEvents:
+    - time: 0.3
+      soundId: atk01_hit_01
   - stepId: a8004072a55f4f1c9de809f1012ec9e1
     displayName: "\u666E\u901A\u653B\u51FB 3"
     animationClip: {fileID: 7400000, guid: fb63dda3b9f133d45bcde0fa0b53d103, type: 3}
