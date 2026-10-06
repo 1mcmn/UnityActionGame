@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[DefaultExecutionOrder(200)]
 public class CameraFollow : MonoBehaviour
 {
     [SerializeField] private Transform target;
@@ -27,6 +28,8 @@ public class CameraFollow : MonoBehaviour
     private Quaternion desiredRotation;
     private bool orientationInitialized;
     private Vector3 smoothedPosition;
+    private Vector3 lastTargetPosition;
+    private bool hasTargetPosition;
     private float framing;
     private Vector3 framingPoint;
 
@@ -89,6 +92,17 @@ public class CameraFollow : MonoBehaviour
     {
         if (target == null) return;
 
+        // 角色的插值平移直接传给镜头；平滑只用于环绕和取景距离，避免走路时镜头追赶角色。
+        Vector3 targetPosition = target.position;
+        if (hasTargetPosition && smoothedInitialized)
+        {
+            Vector3 translation = targetPosition - lastTargetPosition;
+            if (translation.sqrMagnitude < 100f) smoothedPosition += translation;
+            else snapNext = true;
+        }
+        lastTargetPosition = targetPosition;
+        hasTargetPosition = true;
+
         Quaternion orbitRotation = Quaternion.Euler(pitch, yaw, 0f);
         // 双目标取景：注视点从主角向次要目标（如浮空敌人）偏移 35%，两者相距越远镜头拉得越远，保证同框。
         framing = Mathf.Lerp(framing, HasSecondaryFocus ? 1f : 0f, 1f - Mathf.Exp(-4f * Time.unscaledDeltaTime));
@@ -108,6 +122,8 @@ public class CameraFollow : MonoBehaviour
         if (snapNext) { snapNext = false; smoothedPosition = desiredPosition; transform.rotation = desiredRotation; }
         smoothedPosition = Vector3.Lerp(smoothedPosition, desiredPosition, positionT);
         transform.position = smoothedPosition + ShakeOffset();
+        // 从实际镜头位置取景，不能用尚未到达的目标位置计算朝向。
+        desiredRotation = Quaternion.LookRotation(lookTarget - smoothedPosition, Vector3.up);
         float rotationT = 1f - Mathf.Exp(-rotationSmoothSpeed * Time.deltaTime);
         transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationT);
     }

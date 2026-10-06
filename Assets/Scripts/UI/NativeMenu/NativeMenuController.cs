@@ -51,6 +51,7 @@ public sealed class NativeMenuController : MonoBehaviour
     }
     private void Update()
     {
+        NativeMenuButton.ReadInput();
         Vector2 size = new Vector2(ui.menuCamera.pixelWidth, ui.menuCamera.pixelHeight);
         if (size != lastSize) Resize();
         if (Input.GetKeyDown(KeyCode.Escape) && !Loading) { if (Creating) CancelCreate(); else if (ScreenName != "main") Back(); }
@@ -110,6 +111,7 @@ public sealed class NativeMenuController : MonoBehaviour
     }
     public void Show(string screen)
     {
+        NativeMenuButton.ResetForPage(ui.transform);
         ScreenName = screen; ui.mainPanel.gameObject.SetActive(screen == "main"); ui.savesPanel.gameObject.SetActive(screen == "saves");
         ui.settingsPanel.gameObject.SetActive(screen == "settings"); ui.quitPanel.gameObject.SetActive(screen == "quit"); ui.modalPanel.gameObject.SetActive(false);
         ui.artPanel.gameObject.SetActive(screen != "saves");
@@ -166,6 +168,7 @@ public sealed class NativeMenuController : MonoBehaviour
     }
     public void CancelCreate()
     {
+        NativeMenuButton.ResetForPage(ui.transform);
         UiSfx.Play(UiSfx.Cue.Close); ui.modalPanel.gameObject.SetActive(false); carousel.InputEnabled = ScreenName == "saves" && !Loading;
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(ui.newSave.gameObject);
     }
@@ -273,7 +276,9 @@ public sealed class NativeMenuController : MonoBehaviour
     {
         if (indicator == null || ScreenName != "main") return;
         var active = NativeMenuButton.Active != null ? NativeMenuButton.Active.GetComponent<UnityEngine.UI.Selectable>() : null;
-        if (Array.IndexOf(ui.mainButtons, active) < 0) active = ui.mainButtons[lastMain];
+        bool show = active != null && Array.IndexOf(ui.mainButtons, active) >= 0;
+        indicator.gameObject.SetActive(show);
+        if (!show) { indicatorTarget = null; return; }
         if (active != indicatorTarget) { indicatorTarget = active; indicatorPunch = 1; }
         var rect = (RectTransform)active.transform; Rect r = rect.rect;
         Vector3 goal = rect.TransformPoint(new Vector3(r.xMax + 18 * ui.Unit, r.center.y, 0));

@@ -141,6 +141,7 @@ public sealed class PauseMenu : MonoBehaviour
     // ───────────────────────── 交互 ─────────────────────────
     private void Update()
     {
+        NativeMenuButton.ReadInput();
         if (_leaving || _assets == null) return;
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -175,6 +176,7 @@ public sealed class PauseMenu : MonoBehaviour
     public void Close()
     {
         if (!GamePause.IsPaused) return;
+        NativeMenuButton.ResetForPage(_group.transform);
         UiSfx.Play(UiSfx.Cue.Close); _openTarget = 0; _group.blocksRaycasts = _group.interactable = false;
         _dialog.gameObject.SetActive(false);
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
@@ -186,6 +188,7 @@ public sealed class PauseMenu : MonoBehaviour
 
     private void ShowPage(RectTransform page, bool keepTitle)
     {
+        NativeMenuButton.ResetForPage(_group.transform);
         _mainPage.gameObject.SetActive(page == _mainPage); _settingsPage.gameObject.SetActive(page == _settingsPage); _controlsPage.gameObject.SetActive(page == _controlsPage);
         if (page == _mainPage && !keepTitle) { _pageTitle.text = "PAUSED."; _pageSubtitle.text = "暂停"; }
         var items = page == _mainPage ? _mainItems : page == _settingsPage ? _settingsItems : _controlsItems;
@@ -194,6 +197,7 @@ public sealed class PauseMenu : MonoBehaviour
 
     private void Ask(string title, string caption, Action action)
     {
+        NativeMenuButton.ResetForPage(_group.transform);
         _dialogTitle.text = title; _dialogCaption.text = caption; _dialogAction = action;
         _dialog.gameObject.SetActive(true); UiSfx.Play(UiSfx.Cue.Open);
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(_dialogItems[0].gameObject);
@@ -202,6 +206,7 @@ public sealed class PauseMenu : MonoBehaviour
     private void CloseDialog()
     {
         if (!_dialog.gameObject.activeSelf) return;
+        NativeMenuButton.ResetForPage(_group.transform);
         _dialog.gameObject.SetActive(false); _dialogAction = null; UiSfx.Play(UiSfx.Cue.Close);
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(_mainItems[0].gameObject);
     }
@@ -210,8 +215,6 @@ public sealed class PauseMenu : MonoBehaviour
     private void UpdateIndicator(float dt)
     {
         var active = NativeMenuButton.Active != null ? NativeMenuButton.Active.GetComponent<Selectable>() : null;
-        if (active == null && EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null)
-            active = EventSystem.current.currentSelectedGameObject.GetComponent<Selectable>();
         bool show = _mainPage.gameObject.activeSelf && !_dialog.gameObject.activeSelf && active != null && Array.IndexOf(_mainItems, active) >= 0;
         _indicator.gameObject.SetActive(show);
         if (!show) return;

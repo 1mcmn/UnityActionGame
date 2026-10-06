@@ -1,0 +1,167 @@
+{
+  "date": "2026-10-04",
+  "engine": "Tuanjie 2022.3.62t10 / URP",
+  "target": "PC, 1920x1080, third-person perspective",
+  "style": "Paper-grey concrete, ink structure, textured player, segmented sentinel, yellow-green signals",
+  "sceneRoot": "Interblade Arena",
+  "animationAndPhysics": "Existing skeletons, clips, AnimatePhysics, Rigidbody interpolation and OnAnimatorMove retained",
+  "assets": [
+    {
+      "path": "Assets/Game/Generated/BattleArt/ArenaBasalt.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/ArenaChalk.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/ArenaConcrete.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/ArenaSignal.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/ArenaTrim.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/DEMO_City_Crossing_Ground.asset",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/Detailed_N00_000_00_Body_00_SKIN.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/Detailed_N00_000_00_HairBack_00_HAIR.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/Detailed_N00_000_Hair_00_HAIR.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/Detailed_N00_004_01_Shoes_01_CLOTH.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/Detailed_N00_005_01_Tops_01_CLOTH.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/Detailed_N00_010_01_Onepiece_00_CLOTH.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/EnemyInk.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/PaperConcrete.asset",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/PaperGroundLayer.terrainlayer",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/PaperSky.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/PaperSkyGradient.asset",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/PlayerAshHair.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/PlayerInkCloth.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/PlayerPaperCloth.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/SentinelArmour.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/SentinelJoints.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/SentinelMask.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/SentinelSegmented.asset",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/SentinelUndersuit.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    },
+    {
+      "path": "Assets/Game/Generated/BattleArt/WeaponSteel.mat",
+      "source": "Existing project assets or Unity API generation by BattleArtSetup",
+      "rights": "Existing imported assets retain their original license; no new external asset",
+      "validation": "Engine saved; final static render reviewed"
+    }
+  ],
+  "runtimeAcceptance": "Manual walking, combat and Windows performance pending"
+}
